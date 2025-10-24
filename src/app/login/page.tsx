@@ -9,7 +9,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-800 flex flex-col">
       {/* Top left "Log in" text */}
       <div className="absolute top-4 left-4 z-10">
-        <h1 className="text-2xl font-bold text-gray-800">Log in</h1>
+        <h1 className="text-2xl font-semibold text-gray-800 font-display tracking-tight">Log in</h1>
       </div>
 
       {/* Main content area */}
@@ -28,8 +28,8 @@ export default function LoginPage() {
                     </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900">EV Care</h2>
-                    <p className="text-sm text-gray-500">Hệ thống quản lý bảo dưỡng xe điện</p>
+                    <h2 className="text-xl font-semibold text-gray-900 font-display tracking-tight">EV Care</h2>
+                    <p className="text-sm text-gray-500 leading-relaxed">Hệ thống quản lý bảo dưỡng xe điện</p>
                   </div>
                 </div>
               </div>

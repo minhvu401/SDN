@@ -16,7 +16,7 @@ export const Footer: React.FC = () => {
               </div>
               <span className="text-xl font-bold">EV Care</span>
             </div>
-            <p className="text-gray-300 text-sm mb-4">
+            <p className="text-gray-300 text-sm mb-4 leading-relaxed">
               Hệ thống quản lý bảo dưỡng xe điện chuyên nghiệp và đáng tin cậy
             </p>
             <div className="flex space-x-4">
@@ -35,29 +35,29 @@ export const Footer: React.FC = () => {
 
           {/* Dịch vụ */}
           <div className="col-span-1">
-            <h3 className="text-lg font-semibold mb-4">Dịch vụ</h3>
+            <h3 className="text-lg font-semibold mb-4 font-display">Dịch vụ</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Bảo dưỡng định kỳ</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Sửa chữa</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Thay thế pin</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Kiểm tra tổng quát</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Bảo dưỡng định kỳ</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Sửa chữa</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Thay thế pin</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Kiểm tra tổng quát</a></li>
             </ul>
           </div>
 
           {/* Hỗ trợ */}
           <div className="col-span-1">
-            <h3 className="text-lg font-semibold mb-4">Hỗ trợ</h3>
+            <h3 className="text-lg font-semibold mb-4 font-display">Hỗ trợ</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Trung tâm trợ giúp</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Liên hệ</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Câu hỏi thường gặp</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-white text-sm">Báo cáo sự cố</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Trung tâm trợ giúp</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Liên hệ</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Câu hỏi thường gặp</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-white text-sm leading-relaxed">Báo cáo sự cố</a></li>
             </ul>
           </div>
 
           {/* Liên hệ */}
           <div className="col-span-1">
-            <h3 className="text-lg font-semibold mb-4">Liên hệ</h3>
+            <h3 className="text-lg font-semibold mb-4 font-display">Liên hệ</h3>
             <ul className="space-y-3">
               <li className="flex items-center">
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#10B981' }}>

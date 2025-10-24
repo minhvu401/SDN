@@ -14,8 +14,8 @@ export const Header: React.FC = () => {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">EV Care</h1>
-                <p className="text-sm text-gray-500">Hệ thống quản lý bảo dưỡng xe điện</p>
+                <h1 className="text-xl font-semibold text-gray-900 font-display tracking-tight">EV Care</h1>
+                <p className="text-sm text-gray-500 leading-relaxed">Hệ thống quản lý bảo dưỡng xe điện</p>
               </div>
             </div>
           </div>

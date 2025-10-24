@@ -22,8 +22,8 @@ export const LoginForm: React.FC = () => {
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
-        <p className="text-gray-600">Chào mừng bạn trở lại</p>
+        <h1 className="text-3xl font-semibold text-gray-900 mb-2 font-display tracking-tight">Đăng nhập</h1>
+        <p className="text-gray-600 text-lg">Chào mừng bạn trở lại</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -57,7 +57,7 @@ export const LoginForm: React.FC = () => {
           </a>
         </div>
 
-        <Button type="submit" className="w-full" size="lg">
+        <Button type="submit" className="w-full text-lg font-medium" size="lg">
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
@@ -77,7 +77,7 @@ export const LoginForm: React.FC = () => {
 
         <Button
           variant="outline"
-          className="w-full mt-4"
+          className="w-full mt-4 text-base font-medium"
           onClick={handleGoogleLogin}
         >
           <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -91,20 +91,20 @@ export const LoginForm: React.FC = () => {
       </div>
 
       <div className="mt-6 text-center">
-        <p className="text-gray-600">
+        <p className="text-gray-600 text-base">
           Chưa có tài khoản?{' '}
-          <a href="#" className="font-medium hover:opacity-80" style={{ color: '#10B981' }}>
+          <a href="#" className="font-semibold hover:opacity-80" style={{ color: '#10B981' }}>
             Đăng ký ngay
           </a>
         </p>
       </div>
 
       <div className="mt-4 text-center">
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500 leading-relaxed">
           Bằng việc đăng nhập, bạn đồng ý với{' '}
-          <a href="#" className="hover:opacity-80" style={{ color: '#10B981' }}>Điều khoản sử dụng</a>
+          <a href="#" className="hover:opacity-80 font-medium" style={{ color: '#10B981' }}>Điều khoản sử dụng</a>
           {' '}&{' '}
-          <a href="#" className="hover:opacity-80" style={{ color: '#10B981' }}>Chính sách bảo mật</a>
+          <a href="#" className="hover:opacity-80 font-medium" style={{ color: '#10B981' }}>Chính sách bảo mật</a>
         </p>
       </div>
     </div>
