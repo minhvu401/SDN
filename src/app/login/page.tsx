@@ -9,7 +9,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-800 flex flex-col">
       {/* Top left "Log in" text */}
       <div className="absolute top-4 left-4 z-10">
-        <h1 className="text-2xl font-semibold text-gray-800 font-display tracking-tight">Log in</h1>
+        <h1 className="text-2xl font-semibold text-white font-display tracking-tight">Log in</h1>
       </div>
 
       {/* Main content area */}
