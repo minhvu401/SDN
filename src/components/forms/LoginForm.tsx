@@ -63,6 +63,14 @@ export const LoginForm: React.FC = () => {
           </svg>
           Đăng nhập
         </Button>
+
+        <button
+          type="button"
+          onClick={() => { window.location.href = '/'; }}
+          className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition"
+        >
+         Back to Home
+        </button>
       </form>
 
       <div className="mt-6">
