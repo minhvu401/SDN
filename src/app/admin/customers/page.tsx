@@ -1,7 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import {
   ArrowLeft,
   User,
@@ -83,8 +81,7 @@ export default function AdminCustomersPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen bg-gray-50">
 
       {/* Header */}
       <div className="relative bg-white border-b border-gray-200 py-4">
@@ -244,8 +241,6 @@ export default function AdminCustomersPage() {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

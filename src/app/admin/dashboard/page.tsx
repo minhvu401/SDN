@@ -1,7 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import {
   BarChart3,
   DollarSign,
@@ -73,9 +71,7 @@ export default function AdminDashboardPage() {
   const growth = 8.5; // %
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-
+    <div className="min-h-screen bg-gray-50">
       {/* HEADER */}
       <div className="relative bg-white border-b border-gray-200 py-4">
         <div className="container mx-auto px-6 max-w-6xl flex items-center gap-3">
@@ -165,8 +161,6 @@ export default function AdminDashboardPage() {
           </ResponsiveContainer>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }
