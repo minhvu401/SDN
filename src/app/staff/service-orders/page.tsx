@@ -1,7 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import {
   ClipboardCheck,
   Wrench,
@@ -129,8 +127,7 @@ export default function StaffServiceOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen bg-gray-50">
 
       {/* Header */}
       <div className="relative bg-white border-b border-gray-200 py-10 text-center">
@@ -363,7 +360,6 @@ export default function StaffServiceOrdersPage() {
         </div>
       </div>
 
-      <Footer />
     </div>
   );
 }
