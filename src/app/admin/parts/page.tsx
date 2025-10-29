@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Package,
@@ -15,40 +15,30 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { listInventories, type InventoryItem } from '@/lib/api/admin/inventories';
 
 export default function AdminPartsPage() {
   const router = useRouter();
 
-  // ===== DỮ LIỆU MẪU =====
-  const [parts, setParts] = useState([
-    {
-      id: 'P001',
-      name: 'Pin Lithium 60V',
-      model: 'VinFast Feliz S',
-      stock: 5,
-      minStock: 3,
-      usedMonthly: 7,
-      status: 'Cần nhập thêm',
-    },
-    {
-      id: 'P002',
-      name: 'Phanh đĩa trước',
-      model: 'VinFast Klara A2',
-      stock: 12,
-      minStock: 4,
-      usedMonthly: 3,
-      status: 'Đủ tồn',
-    },
-    {
-      id: 'P003',
-      name: 'Bóng đèn pha LED',
-      model: 'VinFast Evo 200',
-      stock: 2,
-      minStock: 5,
-      usedMonthly: 6,
-      status: 'Thiếu hàng',
-    },
-  ]);
+  const [parts, setParts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await listInventories();
+        if (!mounted) return;
+        setParts(data);
+      } catch (e) {
+        setError('Không thể tải danh sách phụ tùng');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const [newPart, setNewPart] = useState({
     name: '',
@@ -75,25 +65,20 @@ export default function AdminPartsPage() {
   };
 
   // ===== GỢI Ý AI: lượng tồn tối thiểu =====
-  const suggestMinStock = (usedMonthly: number) => {
-    // Mô phỏng logic AI: tồn tối thiểu = trung bình sử dụng / 2 + 2
-    return Math.ceil(usedMonthly / 2) + 2;
+  const suggestMinStock = (quantity: number) => {
+    // Gợi ý tối thiểu dựa trên tồn hiện tại (placeholder)
+    return Math.max(1, Math.ceil((quantity || 0) / 10));
   };
 
   const updateSuggestions = () => {
-    setParts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        minStock: suggestMinStock(p.usedMonthly),
-      }))
-    );
+    setParts((prev) => prev.map((p) => ({ ...p, minStock: suggestMinStock(p.quantity ?? 0) })));
     alert('🤖 AI đã cập nhật lượng tồn tối thiểu đề xuất!');
   };
 
   const filtered = parts.filter(
     (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.model.toLowerCase().includes(search.toLowerCase())
+      (p.partName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.category || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -216,7 +201,7 @@ export default function AdminPartsPage() {
                 <tr>
                   <th className="text-left py-2 px-3">Mã</th>
                   <th className="text-left py-2 px-3">Tên phụ tùng</th>
-                  <th className="text-left py-2 px-3">Model xe</th>
+                  <th className="text-left py-2 px-3">Danh mục</th>
                   <th className="text-left py-2 px-3">Tồn kho</th>
                   <th className="text-left py-2 px-3">Tối thiểu</th>
                   <th className="text-left py-2 px-3">SL dùng/tháng</th>
@@ -225,19 +210,25 @@ export default function AdminPartsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => (
+                {loading && (
+                  <tr><td colSpan={8} className="py-6 text-center text-gray-600">Đang tải...</td></tr>
+                )}
+                {error && !loading && (
+                  <tr><td colSpan={8} className="py-6 text-center text-red-600">{error}</td></tr>
+                )}
+                {!loading && !error && filtered.map((p) => (
                   <tr
-                    key={p.id}
+                    key={p._id}
                     className="border-b hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-2 px-3 font-medium text-gray-800">{p.id}</td>
-                    <td className="py-2 px-3">{p.name}</td>
-                    <td className="py-2 px-3">{p.model}</td>
-                    <td className="py-2 px-3">{p.stock}</td>
-                    <td className="py-2 px-3">{p.minStock}</td>
-                    <td className="py-2 px-3">{p.usedMonthly}</td>
+                    <td className="py-2 px-3 font-medium text-gray-800">{p.partCode}</td>
+                    <td className="py-2 px-3">{p.partName}</td>
+                    <td className="py-2 px-3">{p.category || '—'}</td>
+                    <td className="py-2 px-3">{p.quantity ?? 0}</td>
+                    <td className="py-2 px-3">{p.quantity ? Math.max(1, Math.ceil((p.quantity as number)/10)) : 1}</td>
+                    <td className="py-2 px-3">{p.unitPrice ? p.unitPrice.toLocaleString('vi-VN') : '—'}</td>
                     <td className="py-2 px-3">
-                      <StatusBadge stock={p.stock} min={p.minStock} />
+                      <StatusBadge stock={p.quantity ?? 0} min={p.quantity ? Math.max(1, Math.ceil((p.quantity as number)/10)) : 1} />
                     </td>
                     <td className="py-2 px-3">
                       <button

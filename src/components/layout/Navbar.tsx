@@ -1,11 +1,43 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LayoutDashboard, User as UserIcon, LogOut, LogIn, UserPlus, Settings, KeyRound, Bell, Shield, HelpCircle } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const [user, setUser] = useState<any | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      setUser(raw ? JSON.parse(raw) : null);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+    } catch {}
+    window.location.href = '/';
+  };
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
 
   const navItems = [
     { name: 'Trang chủ', path: '/' },
@@ -66,19 +98,89 @@ export const Navbar: React.FC = () => {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/login"
-              className="px-4 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700"
-            >
-              Đăng nhập
-            </Link>
-            <Link
-              href="/register"
-              className="px-4 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700"
-            >
-              Đăng ký
-            </Link>
+          <div className="flex items-center space-x-4 relative" ref={menuRef}>
+            {mounted && user ? (
+              <>
+                <button
+                  onClick={() => setOpen((v) => !v)}
+                  className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  aria-label="Mở menu hồ sơ"
+                >
+                  <UserIcon className="w-5 h-5" />
+                </button>
+
+                {open && (
+                  <div className="absolute right-0 top-12 w-72 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                    {/* Header */}
+                    <div className="p-4 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                          {(user.fullName || user.username || 'U').slice(0,1).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{user.fullName || user.username}</p>
+                          <p className="text-xs text-gray-500 capitalize">{(user.role || '').toLowerCase() || 'user'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu */}
+                    <div className="p-2">
+                      <Link href="/customer/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <UserIcon className="w-4 h-4 text-emerald-600" />
+                        <span>Thông tin cá nhân</span>
+                      </Link>
+                      <Link href="/customer/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <Settings className="w-4 h-4 text-emerald-600" />
+                        <span>Cài đặt</span>
+                      </Link>
+                      <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <KeyRound className="w-4 h-4 text-emerald-600" />
+                        <span>Đổi mật khẩu</span>
+                      </Link>
+                      <Link href="/customer/notifications" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <Bell className="w-4 h-4 text-emerald-600" />
+                        <span>Thông báo</span>
+                      </Link>
+                      <Link href="/customer/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <Shield className="w-4 h-4 text-emerald-600" />
+                        <span>Bảo mật</span>
+                      </Link>
+                      <Link href="/customer/support" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <HelpCircle className="w-4 h-4 text-emerald-600" />
+                        <span>Trợ giúp</span>
+                      </Link>
+                    </div>
+
+                    <div className="px-2 pb-3">
+                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50">
+                        <LogOut className="w-4 h-4" />
+                        <span>Đăng xuất</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="px-4 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 inline-flex items-center gap-2"
+                  aria-label="Đăng nhập"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Đăng nhập</span>
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-4 py-2 text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 inline-flex items-center gap-2"
+                  aria-label="Đăng ký"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Đăng ký</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

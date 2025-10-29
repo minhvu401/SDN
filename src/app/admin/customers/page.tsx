@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   User,
@@ -13,31 +13,30 @@ import {
   Search,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { listCustomers, type CustomerItem } from '@/lib/api/admin/customers';
 
 export default function AdminCustomersPage() {
   const router = useRouter();
 
-  const [customers, setCustomers] = useState([
-    {
-      id: 'C001',
-      name: 'Nguyễn Văn A',
-      email: 'vana@example.com',
-      phone: '0987 123 456',
-      vehicles: [
-        { model: 'VinFast Feliz S', plate: '99A-123.45', lastService: 'Bảo dưỡng định kỳ' },
-      ],
-    },
-    {
-      id: 'C002',
-      name: 'Trần Thị B',
-      email: 'tranb@example.com',
-      phone: '0912 456 789',
-      vehicles: [
-        { model: 'VinFast Klara A2', plate: '30B-456.78', lastService: 'Thay pin & kiểm tra sạc' },
-        { model: 'VinFast Evo 200', plate: '22C-789.12', lastService: 'Kiểm tra hệ thống điện' },
-      ],
-    },
-  ]);
+  const [customers, setCustomers] = useState<CustomerItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await listCustomers();
+        if (!mounted) return;
+        setCustomers(res.data || []);
+      } catch (err: unknown) {
+        setError('Không thể tải danh sách khách hàng');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const [search, setSearch] = useState('');
   const [newCustomer, setNewCustomer] = useState({
@@ -75,9 +74,9 @@ export default function AdminCustomersPage() {
 
   const filtered = customers.filter(
     (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
+      (c.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone || '').includes(search) ||
+      (c.email || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -190,14 +189,24 @@ export default function AdminCustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => (
-                  <tr key={c.id} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="py-2 px-3 font-medium text-gray-800">{c.id}</td>
-                    <td className="py-2 px-3">{c.name}</td>
+                {loading && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-gray-600">Đang tải...</td>
+                  </tr>
+                )}
+                {error && !loading && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-red-600">{error}</td>
+                  </tr>
+                )}
+                {!loading && !error && filtered.map((c) => (
+                  <tr key={c._id} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="py-2 px-3 font-medium text-gray-800">{c._id.slice(-6)}</td>
+                    <td className="py-2 px-3">{c.fullName || c.username}</td>
                     <td className="py-2 px-3">
                       <div className="text-gray-700 flex flex-col">
                         <span className="inline-flex items-center gap-1">
-                          <Phone className="w-4 h-4 text-emerald-600" /> {c.phone}
+                          <Phone className="w-4 h-4 text-emerald-600" /> {c.phone || '—'}
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                           <Mail className="w-4 h-4" /> {c.email || '—'}
@@ -206,13 +215,9 @@ export default function AdminCustomersPage() {
                     </td>
                     <td className="py-2 px-3">
                       <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
-                        {c.vehicles.map((v, i) => (
+                        {c.vehicles?.map((v, i) => (
                           <li key={i}>
-                            <span className="font-medium">{v.model}</span> – {v.plate}
-                            <br />
-                            <span className="text-xs text-gray-500">
-                              Dịch vụ gần nhất: {v.lastService}
-                            </span>
+                            <span className="font-medium">{v.carModel}</span> – {v.licensePlate}
                           </li>
                         ))}
                       </ul>
