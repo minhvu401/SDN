@@ -3,15 +3,53 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { login as loginApi } from '../../lib/api/auth';
 
 export const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempt:', { email, password });
+    setError('');
+    setLoading(true);
+    try {
+      const trimmedUsername = username.trim();
+      const trimmedPassword = password.trim();
+      if (!trimmedUsername || !trimmedPassword) {
+        throw new Error('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+      }
+
+      const data = await loginApi({ username: trimmedUsername, password: trimmedPassword });
+      const token = data?.access_token || data?.accessToken;
+      const user = data?.user;
+      if (token) {
+        localStorage.setItem('accessToken', token);
+      }
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      // Điều hướng theo role
+      const role = (user?.role || '').toLowerCase();
+      let redirect = '/';
+      if (role === 'admin') redirect = '/admin/dashboard';
+      else if (role === 'staff') redirect = '/staff/dashboard';
+      else if (role === 'customer') redirect = '/customer/dashboard';
+      window.location.href = redirect;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+      const lower = message.toLowerCase();
+      if (lower.includes('401') || lower.includes('invalid') || lower.includes('không chính xác')) {
+        setError('Username hoặc mật khẩu không chính xác');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -28,13 +66,13 @@ export const LoginForm: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          type="email"
-          placeholder="Nhập email của bạn"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Tên đăng nhập"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A4 4 0 017 17h10a4 4 0 011.879.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           }
         />
@@ -57,11 +95,15 @@ export const LoginForm: React.FC = () => {
           </a>
         </div>
 
-        <Button type="submit" className="w-full text-lg font-medium" size="lg">
+        {error && (
+          <p className="text-sm text-red-600">{error}</p>
+        )}
+
+        <Button type="submit" className="w-full text-lg font-medium" size="lg" disabled={loading}>
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Đăng nhập
+          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </Button>
 
         <button

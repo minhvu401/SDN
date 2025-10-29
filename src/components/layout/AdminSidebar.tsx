@@ -50,6 +50,11 @@ export const AdminSidebar: React.FC = () => {
       icon: Wrench,
     },
     {
+      name: 'Dịch vụ',
+      path: '/admin/services',
+      icon: Wrench,
+    },
+    {
       name: 'Tài chính',
       path: '/admin/finance',
       icon: DollarSign,

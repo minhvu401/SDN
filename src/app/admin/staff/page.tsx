@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   UserCog,
@@ -15,34 +15,31 @@ import {
   Key,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { listTechnicians, type TechnicianItem } from '@/lib/api/admin/technicians';
 
 export default function AdminStaffPage() {
   const router = useRouter();
 
-  // ===== DỮ LIỆU MẪU =====
-  const [staff, setStaff] = useState([
-    {
-      id: 'S001',
-      name: 'Nguyễn Văn A',
-      role: 'Admin',
-      email: 'admin@evcare.vn',
-      phone: '0987 123 456',
-    },
-    {
-      id: 'S002',
-      name: 'Trần Thị B',
-      role: 'Staff',
-      email: 'tranb@evcare.vn',
-      phone: '0912 456 789',
-    },
-    {
-      id: 'S003',
-      name: 'Phạm Minh C',
-      role: 'Technician',
-      email: 'minhc@evcare.vn',
-      phone: '0901 222 888',
-    },
-  ]);
+  const [staff, setStaff] = useState<TechnicianItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await listTechnicians();
+        if (!mounted) return;
+        const arr = Array.isArray(data) ? data : (data as any)?.data || [];
+        setStaff(arr);
+      } catch (e) {
+        setError('Không thể tải danh sách nhân sự');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const [newStaff, setNewStaff] = useState({
     name: '',
@@ -52,7 +49,7 @@ export default function AdminStaffPage() {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingData, setEditingData] = useState<any>({});
+  const [editingData, setEditingData] = useState<TechnicianItem | null>(null);
 
   // ===== THÊM NHÂN VIÊN =====
   const addStaff = () => {
@@ -60,21 +57,21 @@ export default function AdminStaffPage() {
       alert('⚠️ Vui lòng nhập tên và số điện thoại!');
       return;
     }
-    const id = 'S' + (staff.length + 1).toString().padStart(3, '0');
-    setStaff([...staff, { id, ...newStaff }]);
+    const _id = 'temp_' + Date.now().toString();
+    setStaff([...staff, { _id, name: newStaff.name, email: newStaff.email, phone: newStaff.phone } as TechnicianItem]);
     setNewStaff({ name: '', email: '', phone: '', role: 'Staff' });
   };
 
   // ===== XÓA =====
   const deleteStaff = (id: string) => {
     if (confirm('Bạn có chắc muốn xóa nhân viên này?')) {
-      setStaff((prev) => prev.filter((s) => s.id !== id));
+      setStaff((prev) => prev.filter((s) => s._id !== id));
     }
   };
 
   // ===== SỬA =====
   const startEdit = (id: string) => {
-    const s = staff.find((x) => x.id === id);
+    const s = staff.find((x) => x._id === id);
     if (s) {
       setEditingId(id);
       setEditingData({ ...s });
@@ -82,9 +79,11 @@ export default function AdminStaffPage() {
   };
 
   const saveEdit = () => {
-    setStaff((prev) => prev.map((s) => (s.id === editingId ? editingData : s)));
+    if (editingData) {
+      setStaff((prev) => prev.map((s) => (s._id === editingId ? editingData : s)));
+    }
     setEditingId(null);
-    setEditingData({});
+    setEditingData(null);
   };
 
   return (
@@ -180,40 +179,32 @@ export default function AdminStaffPage() {
                 </tr>
               </thead>
               <tbody>
-                {staff.map((s) => (
-                  <tr key={s.id} className="border-b hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 font-medium text-gray-800">{s.id}</td>
+                {loading && (
+                  <tr><td colSpan={5} className="py-6 text-center text-gray-600">Đang tải...</td></tr>
+                )}
+                {error && !loading && (
+                  <tr><td colSpan={5} className="py-6 text-center text-red-600">{error}</td></tr>
+                )}
+                {!loading && !error && staff.map((s) => (
+                  <tr key={(s as any)._id || (s as any).id || Math.random()} className="border-b hover:bg-gray-50 transition">
+                    <td className="py-2 px-3 font-medium text-gray-800">{(((s as any)._id || (s as any).id || '').toString()).slice(-6) || '—'}</td>
                     <td className="py-2 px-3">{s.name}</td>
                     <td className="py-2 px-3">
                       <div className="text-gray-700 flex flex-col">
                         <span className="inline-flex items-center gap-1">
-                          <Phone className="w-4 h-4 text-emerald-600" /> {s.phone}
+                          <Phone className="w-4 h-4 text-emerald-600" /> {s.phone || '—'}
                         </span>
                         <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                          <Mail className="w-4 h-4" /> {s.email}
+                          <Mail className="w-4 h-4" /> {s.email || '—'}
                         </span>
                       </div>
                     </td>
                     <td className="py-2 px-3">
-                      {editingId === s.id ? (
-                        <select
-                          value={editingData.role}
-                          onChange={(e) =>
-                            setEditingData({ ...editingData, role: e.target.value })
-                          }
-                          className="border rounded-md px-2 py-1 text-sm focus:ring-emerald-500 focus:border-emerald-500"
-                        >
-                          <option value="Admin">Admin</option>
-                          <option value="Staff">Staff</option>
-                          <option value="Technician">Technician</option>
-                        </select>
-                      ) : (
-                        <RoleBadge role={s.role} />
-                      )}
+                      <RoleBadge role={'Technician'} />
                     </td>
                     <td className="py-2 px-3">
                       <div className="flex items-center gap-2">
-                        {editingId === s.id ? (
+                        {editingId === s._id ? (
                           <button
                             onClick={saveEdit}
                             className="p-1.5 rounded-md hover:bg-emerald-100 text-emerald-700"
@@ -222,14 +213,14 @@ export default function AdminStaffPage() {
                           </button>
                         ) : (
                           <button
-                            onClick={() => startEdit(s.id)}
+                            onClick={() => startEdit(s._id)}
                             className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                         )}
                         <button
-                          onClick={() => deleteStaff(s.id)}
+                          onClick={() => deleteStaff(s._id)}
                           className="p-1.5 rounded-md hover:bg-gray-100 text-red-500"
                         >
                           <Trash2 className="w-4 h-4" />

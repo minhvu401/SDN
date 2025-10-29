@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import {
@@ -15,30 +15,66 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getProfile, updateProfile } from '@/lib/api/auth';
 
 export default function CustomerProfilePage() {
   const router = useRouter();
 
   const [profile, setProfile] = useState({
-    fullName: 'Nguyễn Văn A',
-    email: 'nguyenvana@example.com',
-    phone: '0987654321',
-    address: '123 Lý Thái Tổ, Bắc Ninh',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
     paymentMethod: 'Ví Momo',
-    bankName: 'Vietcombank',
-    cardNumber: '**** **** **** 1245',
+    bankName: '',
+    cardNumber: '',
   });
 
   const [saved, setSaved] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getProfile();
+        if (!mounted) return;
+        setUserId(data._id);
+        setProfile((prev) => ({
+          ...prev,
+          fullName: data.fullName || '',
+          email: data.email || '',
+          phone: data.phone || '',
+        }));
+      } catch (err: unknown) {
+        setError('Không thể tải hồ sơ. Vui lòng đăng nhập lại.');
+        router.push('/login');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [router]);
 
   const handleChange = (field: string, value: string) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (!userId) return;
+    try {
+      await updateProfile(userId, {
+        fullName: profile.fullName,
+        phone: profile.phone,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      setError('Cập nhật thất bại. Vui lòng thử lại.');
+    }
   };
 
   return (
@@ -65,6 +101,8 @@ export default function CustomerProfilePage() {
 
       {/* Nội dung */}
       <div className="container mx-auto px-6 py-10 max-w-3xl">
+        {loading && <p className="text-center text-gray-600">Đang tải hồ sơ...</p>}
+        {error && <p className="text-center text-red-600">{error}</p>}
         <form
           onSubmit={handleSave}
           className="bg-white shadow-md rounded-xl border border-gray-100 p-8 space-y-8"
