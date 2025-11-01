@@ -11,7 +11,7 @@ export interface RegisterPayload {
   password: string;
   fullName: string;
   phone: string;
-  role?: 'customer' | 'staff' | 'admin' | string;
+  role?: 'customer' | 'staff' | 'admin' | 'technician' | string;
   vehicles?: VehicleInput[];
 }
 
@@ -34,6 +34,7 @@ export const ALLOWED_CAR_MODELS: string[] = [
   'BYD Yangwang U8',
 ];
 
+/* 🧩 Đăng ký tài khoản (mặc định role = customer) */
 export async function register(payload: RegisterPayload) {
   const response = await fetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
@@ -51,6 +52,7 @@ export async function register(payload: RegisterPayload) {
   return handleResponse<any>(response);
 }
 
+/* 🧩 Đăng nhập thông thường (customer/staff/admin) */
 export interface LoginPayload {
   username: string;
   password: string;
@@ -68,6 +70,25 @@ export async function login(payload: LoginPayload) {
   return handleResponse<any>(response);
 }
 
+/* 🧩 🔧 Đăng nhập kỹ thuật viên (bằng số điện thoại) */
+export interface TechnicianLoginPayload {
+  phone: string;
+  password: string;
+}
+
+export async function loginTechnician(payload: TechnicianLoginPayload) {
+  const response = await fetch(`${API_BASE_URL}/technicians/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone: payload.phone,
+      password: payload.password,
+    }),
+  });
+  return handleResponse<any>(response);
+}
+
+/* 🧩 Lấy thông tin hồ sơ */
 export interface ProfileResponse {
   _id: string;
   username: string;
@@ -87,6 +108,7 @@ export async function getProfile() {
   return handleResponse<ProfileResponse>(response);
 }
 
+/* 🧩 Cập nhật hồ sơ */
 export interface UpdateProfilePayload {
   fullName?: string;
   role?: string;
@@ -103,5 +125,3 @@ export async function updateProfile(id: string, payload: UpdateProfilePayload) {
   });
   return handleResponse<any>(response);
 }
-
-

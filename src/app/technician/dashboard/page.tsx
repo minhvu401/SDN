@@ -67,13 +67,6 @@ export default function TechnicianDashboardPage() {
       {/* Header */}
       <div className="relative bg-white border-b border-gray-200 py-4">
         <div className="container mx-auto px-6 max-w-6xl flex items-center gap-3">
-          <button
-            onClick={() => router.push('/staff/dashboard')}
-            className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
-          >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            <span className="text-sm font-medium">Trang nhân viên</span>
-          </button>
 
           <div className="ml-auto flex items-center gap-2">
             <Wrench className="w-5 h-5 text-emerald-600" />

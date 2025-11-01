@@ -1,5 +1,16 @@
 import { API_BASE_URL, authHeaders, handleResponse } from '../../api/client';
 
+export interface Center {
+  _id: string;
+  name: string;
+  address: string;
+  phone?: string;
+  email?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface CenterItem {
   _id: string;
   name: string;
@@ -48,6 +59,27 @@ export async function listCenters() {
     headers: authHeaders(),
   });
   return handleResponse<CenterItem[]>(res);
+}
+
+/**
+ * 🟢 Lấy danh sách tất cả trung tâm bảo dưỡng
+ */
+export async function fetchCenters(): Promise<Center[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/centers`, {
+      method: 'GET',
+      headers: authHeaders(),
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch centers: ${response.status}`);
+    }
+    const data: Center[] = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching centers:', error);
+    throw error;
+  }
 }
 
 export async function getCenterById(id: string) {

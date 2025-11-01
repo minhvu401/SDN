@@ -13,17 +13,49 @@ import {
   ArrowLeft,
   Save,
   CheckCircle2,
+  Car,
+  ShieldCheck,
+  Wrench,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getProfile, updateProfile } from '@/lib/api/auth';
+import { getProfile } from '@/lib/api/auth';
+import {
+  getCustomerProfile,
+  updateCustomerProfile,
+} from '@/lib/api/customer/profile';
+import { toast } from 'react-hot-toast';  
+
+type Vehicle = {
+  // Define the properties of Vehicle here
+};
+
+type CustomerProfile = {
+  email: string;
+  username: string;
+  fullName: string;
+  phone: string;
+  role: string; // Ensure this is defined
+  vehicles: Vehicle[]; // Ensure this is an array of Vehicle
+  isActive: boolean; // Ensure this is defined
+  maintenanceCount: number; // Ensure this is defined
+  address: string;
+  paymentMethod: string;
+  bankName: string;
+  cardNumber: string;
+};
 
 export default function CustomerProfilePage() {
   const router = useRouter();
 
-  const [profile, setProfile] = useState({
-    fullName: '',
+  const [profile, setProfile] = useState<CustomerProfile>({
     email: '',
+    username: '',
+    fullName: '',
     phone: '',
+    role: '',
+    vehicles: [],
+    isActive: false,
+    maintenanceCount: 0,
     address: '',
     paymentMethod: 'Ví Momo',
     bankName: '',
@@ -39,14 +71,29 @@ export default function CustomerProfilePage() {
     let mounted = true;
     (async () => {
       try {
-        const data = await getProfile();
+        const authData = await getProfile();
         if (!mounted) return;
-        setUserId(data._id);
+        setUserId(authData._id);
+        // Set email from authData immediately
+        setProfile(prev => ({
+          ...prev,
+          email: authData.email || ''
+        }));
+
+        const customer = await getCustomerProfile(authData._id);
+        if (!mounted) return;
         setProfile((prev) => ({
           ...prev,
-          fullName: data.fullName || '',
-          email: data.email || '',
-          phone: data.phone || '',
+          username: customer.username || '',
+          fullName: customer.fullName || '',
+          phone: customer.phone || '',
+          vehicles: customer.vehicles || [],
+          isActive: customer.isActive ?? false,
+          maintenanceCount: customer.maintenanceCount ?? 0,
+          address: customer.address || '',
+          paymentMethod: customer.paymentMethod || prev.paymentMethod,
+          bankName: customer.bankName || '',
+          cardNumber: customer.cardNumber || '',
         }));
       } catch (err: unknown) {
         setError('Không thể tải hồ sơ. Vui lòng đăng nhập lại.');
@@ -55,7 +102,9 @@ export default function CustomerProfilePage() {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [router]);
 
   const handleChange = (field: string, value: string) => {
@@ -66,14 +115,21 @@ export default function CustomerProfilePage() {
     e.preventDefault();
     if (!userId) return;
     try {
-      await updateProfile(userId, {
+      await updateCustomerProfile(userId, {
         fullName: profile.fullName,
         phone: profile.phone,
+        address: profile.address,
+        paymentMethod: profile.paymentMethod,
+        bankName: profile.bankName,
+        cardNumber: profile.cardNumber,
       });
       setSaved(true);
+      toast.success('Cập nhật thành công!');
       setTimeout(() => setSaved(false), 2500);
     } catch {
+      toast.error('Cập nhật thất bại. Vui lòng thử lại.');
       setError('Cập nhật thất bại. Vui lòng thử lại.');
+      
     }
   };
 
@@ -114,6 +170,32 @@ export default function CustomerProfilePage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
+                <label className="text-sm text-gray-700 font-medium">
+                  Tên đăng nhập
+                </label>
+                <input
+                  type="text"
+                  value={profile.username}
+                  disabled
+                  className="w-full border rounded-md p-2 mt-1 bg-gray-100 text-gray-700 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-700 font-medium">
+                  Email
+                </label>
+                <div className="flex items-center border rounded-md mt-1 px-2 bg-gray-100">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <input
+                    type="text"
+                    value={profile.email}
+                    disabled
+                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none bg-gray-100 text-gray-700 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+              
+              <div>
                 <label className="text-sm text-gray-700 font-medium">Họ và tên</label>
                 <input
                   type="text"
@@ -123,7 +205,9 @@ export default function CustomerProfilePage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-700 font-medium">Số điện thoại</label>
+                <label className="text-sm text-gray-700 font-medium">
+                  Số điện thoại
+                </label>
                 <div className="flex items-center border rounded-md mt-1 px-2">
                   <Phone className="w-4 h-4 text-gray-500" />
                   <input
@@ -134,31 +218,45 @@ export default function CustomerProfilePage() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-sm text-gray-700 font-medium">Email</label>
-                <div className="flex items-center border rounded-md mt-1 px-2">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => handleChange('email', e.target.value)}
-                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none"
-                  />
-                </div>
+
+              
+            </div>
+
+            {/* Trạng thái & số lần bảo dưỡng */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <ShieldCheck
+                  className={`w-5 h-5 ${
+                    profile.isActive ? 'text-emerald-600' : 'text-gray-400'
+                  }`}
+                />
+                <span>
+                  Trạng thái:{' '}
+                  <b>{profile.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</b>
+                </span>
               </div>
-              <div>
-                <label className="text-sm text-gray-700 font-medium">Địa chỉ</label>
-                <div className="flex items-center border rounded-md mt-1 px-2">
-                  <Home className="w-4 h-4 text-gray-500" />
-                  <input
-                    type="text"
-                    value={profile.address}
-                    onChange={(e) => handleChange('address', e.target.value)}
-                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none"
-                  />
-                </div>
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Wrench className="w-5 h-5 text-emerald-600" />
+                <span>Bảo dưỡng đã thực hiện: <b>{profile.maintenanceCount}</b></span>
               </div>
             </div>
+
+            {/* Thông tin xe */}
+            {profile.vehicles?.length > 0 && (
+              <div className="mt-5">
+                <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <Car className="w-4 h-4 text-emerald-600" /> Phương tiện đã đăng ký
+                </h3>
+                <ul className="mt-2 space-y-1 text-sm text-gray-700">
+                  {profile.vehicles.map((v: any) => (
+                    <li key={v._id} className="flex justify-between border-b pb-1">
+                      <span>{v.carModel}</span>
+                      <span className="text-gray-500">{v.licensePlate}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Phương thức thanh toán */}
@@ -193,7 +291,9 @@ export default function CustomerProfilePage() {
                 </div>
               </div>
               <div>
-                <label className="text-sm text-gray-700 font-medium">Số thẻ / Tài khoản</label>
+                <label className="text-sm text-gray-700 font-medium">
+                  Số thẻ / Tài khoản
+                </label>
                 <div className="flex items-center border rounded-md mt-1 px-2">
                   <Wallet className="w-4 h-4 text-gray-500" />
                   <input
