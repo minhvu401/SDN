@@ -30,13 +30,51 @@ export interface AssignTechnicianDto {
   technicianId: string;
 }
 
+export interface StaffItem {
+  staffId: string; // API trả về staffId, không phải _id
+  _id?: string; // Alias cho staffId để backward compatibility
+  username: string;
+  email: string;
+  fullName: string;
+  phone?: string; // Optional vì một số staff có thể không có phone
+  role?: string; // API không trả về role trong response
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StaffListResponse {
+  success: boolean;
+  data: StaffItem[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export async function listStaff() {
+  const res = await fetch(`${API_BASE_URL}/staff`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  const response = await handleResponse<StaffListResponse>(res);
+  // Map staffId thành _id để backward compatibility
+  const staffList = response.data?.map((staff) => ({
+    ...staff,
+    _id: staff.staffId, // Thêm _id từ staffId
+  })) || [];
+  return staffList as StaffItem[];
+}
+
 export async function createStaff(payload: CreateStaffDto) {
   const res = await fetch(`${API_BASE_URL}/staff`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(payload),
   });
-  return handleResponse<any>(res);
+  return handleResponse<StaffItem>(res);
 }
 
 export async function getStaffBookings() {
