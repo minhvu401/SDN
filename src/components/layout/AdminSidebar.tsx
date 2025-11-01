@@ -6,16 +6,16 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
-  Car,
   Wrench,
   DollarSign,
   FileText,
-  Settings,
   Menu,
   X,
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Calendar,
+  UserCog,
 } from 'lucide-react';
 
 export const AdminSidebar: React.FC = () => {
@@ -35,14 +35,14 @@ export const AdminSidebar: React.FC = () => {
       icon: Users,
     },
     {
-      name: 'Xe',
-      path: '/admin/vehicles',
-      icon: Car,
+      name: 'Lịch hẹn',
+      path: '/admin/booking',
+      icon: Calendar,
     },
     {
-      name: 'Nhân viên',
-      path: '/admin/staff',
-      icon: Users,
+      name: 'Dịch vụ',
+      path: '/admin/services',
+      icon: Wrench,
     },
     {
       name: 'Phụ tùng',
@@ -50,9 +50,14 @@ export const AdminSidebar: React.FC = () => {
       icon: Wrench,
     },
     {
-      name: 'Dịch vụ',
-      path: '/admin/services',
-      icon: Wrench,
+      name: 'Nhân viên',
+      path: '/admin/staff',
+      icon: Users,
+    },
+    {
+      name: 'Kỹ thuật viên',
+      path: '/admin/technicians',
+      icon: UserCog,
     },
     {
       name: 'Tài chính',
@@ -63,11 +68,6 @@ export const AdminSidebar: React.FC = () => {
       name: 'Báo cáo',
       path: '/admin/reports',
       icon: FileText,
-    },
-    {
-      name: 'Cài đặt',
-      path: '/admin/settings',
-      icon: Settings,
     },
   ];
 
