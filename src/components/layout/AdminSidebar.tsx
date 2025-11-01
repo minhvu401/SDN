@@ -79,6 +79,14 @@ export const AdminSidebar: React.FC = () => {
     setIsMobileOpen(!isMobileOpen);
   };
 
+  const handleLogout = () => {
+    // Xóa token và user data từ localStorage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    // Chuyển hướng về trang đăng nhập
+    window.location.href = '/login';
+  };
+
   return (
     <>
       {/* Mobile menu button */}
@@ -176,6 +184,7 @@ export const AdminSidebar: React.FC = () => {
         {/* Footer */}
         <div className="p-4 border-t border-gray-200">
           <button
+            onClick={handleLogout}
             className={`
               flex items-center w-full px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors
             `}
