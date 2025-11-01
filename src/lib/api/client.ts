@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://sdn-mma.onrender.com';
+export const API_BASE_URL = 'https://sdn-mma-be.onrender.com';
 
 export async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
