@@ -31,15 +31,27 @@ export interface AssignTechnicianDto {
 }
 
 export interface StaffItem {
-  _id: string;
+  staffId: string; // API trả về staffId, không phải _id
+  _id?: string; // Alias cho staffId để backward compatibility
   username: string;
   email: string;
   fullName: string;
-  phone: string;
-  role: string;
+  phone?: string; // Optional vì một số staff có thể không có phone
+  role?: string; // API không trả về role trong response
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface StaffListResponse {
+  success: boolean;
+  data: StaffItem[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export async function listStaff() {
@@ -47,7 +59,13 @@ export async function listStaff() {
     method: 'GET',
     headers: authHeaders(),
   });
-  return handleResponse<StaffItem[]>(res);
+  const response = await handleResponse<StaffListResponse>(res);
+  // Map staffId thành _id để backward compatibility
+  const staffList = response.data?.map((staff) => ({
+    ...staff,
+    _id: staff.staffId, // Thêm _id từ staffId
+  })) || [];
+  return staffList as StaffItem[];
 }
 
 export async function createStaff(payload: CreateStaffDto) {

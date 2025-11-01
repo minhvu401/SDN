@@ -65,6 +65,11 @@ export default function AdminInventoriesPage() {
     try {
       setLoading(true);
       const data = await listInventories();
+      console.log('Loaded inventories:', data);
+      // Log để kiểm tra xem API có trả về minQuantity không
+      if (data && data.length > 0) {
+        console.log('First item minQuantity:', data[0].minQuantity);
+      }
       setParts(data || []);
       setError('');
     } catch (e: any) {
@@ -149,13 +154,15 @@ export default function AdminInventoriesPage() {
     setSubmitting(true);
     try {
       if (editingId) {
-        // For UPDATE: can include isActive
+        // For UPDATE: exclude partCode (API doesn't accept it), include isActive
         const updatePayload: any = {
           partName: formData.partName.trim(),
           minQuantity: minQtyNum,
         };
 
-        if (formData.partCode.trim()) updatePayload.partCode = formData.partCode.trim();
+        // DO NOT include partCode in update (API doesn't accept it)
+        // partCode cannot be updated after creation
+        
         if (formData.category.trim()) updatePayload.category = formData.category.trim();
         if (formData.description.trim()) updatePayload.description = formData.description.trim();
         if (formData.quantity.trim() && !isNaN(parseInt(formData.quantity, 10))) {
@@ -168,11 +175,14 @@ export default function AdminInventoriesPage() {
         if (formData.productLink.trim()) updatePayload.productLink = formData.productLink.trim();
         if (formData.warranty.trim()) updatePayload.warranty = formData.warranty.trim();
         
+        // Include isActive in update (API accepts it)
         updatePayload.isActive = formData.isActive;
         
-        await updateInventory(editingId, updatePayload);
+        const updatedItem = await updateInventory(editingId, updatePayload);
         handleCloseForm();
         showToast('Cập nhật phụ tùng thành công!', 'success');
+        // Reload data to reflect changes
+        await loadParts();
       } else {
         // For CREATE: DO NOT include isActive
         const createPayload: any = {
@@ -194,15 +204,17 @@ export default function AdminInventoriesPage() {
         if (formData.warranty.trim()) createPayload.warranty = formData.warranty.trim();
 
         // Explicitly ensure isActive is NOT in the payload
-        console.log('Creating inventory with payload:', JSON.stringify(createPayload, null, 2));
         
-        await createInventory(createPayload);
+        const createdItem = await createInventory(createPayload);
         handleCloseForm();
         showToast('Thêm phụ tùng thành công!', 'success');
+        // Reload data to reflect changes
+        await loadParts();
       }
-      loadParts();
     } catch (err: any) {
-      showToast(err.message || 'Có lỗi xảy ra', 'error');
+      console.error('Error in handleSubmit:', err);
+      const errorMessage = err?.message || err?.response?.data?.message || 'Có lỗi xảy ra khi lưu phụ tùng';
+      showToast(errorMessage, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -321,10 +333,18 @@ export default function AdminInventoriesPage() {
                     <td className="py-2 px-3">{p.partName}</td>
                     <td className="py-2 px-3">{p.category || '—'}</td>
                     <td className="py-2 px-3">{p.quantity ?? 0}</td>
-                    <td className="py-2 px-3">{p.quantity ? Math.max(1, Math.ceil((p.quantity as number)/10)) : 1}</td>
+                    <td className="py-2 px-3">
+                      {(p.minQuantity !== undefined && p.minQuantity !== null) ? (
+                        <span className="px-2 py-0.5 bg-emerald-50 rounded text-emerald-700 font-medium">
+                          {p.minQuantity}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="py-2 px-3">{p.unitPrice ? p.unitPrice.toLocaleString('vi-VN') : '—'}</td>
                     <td className="py-2 px-3">
-                      <StatusBadge stock={p.quantity ?? 0} min={p.quantity ? Math.max(1, Math.ceil((p.quantity as number)/10)) : 1} />
+                      <StatusBadge stock={p.quantity ?? 0} min={p.minQuantity ?? 0} />
                     </td>
                     <td className="py-2 px-3">
                       <div className="flex items-center gap-2">
@@ -395,7 +415,7 @@ export default function AdminInventoriesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="part-code" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mã phụ tùng
+                    Mã phụ tùng {editingId && <span className="text-xs text-gray-500">(không thể thay đổi)</span>}
                   </label>
                   <input
                     id="part-code"
@@ -403,7 +423,10 @@ export default function AdminInventoriesPage() {
                     type="text"
                     value={formData.partCode}
                     onChange={(e) => setFormData({ ...formData, partCode: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                    disabled={!!editingId}
+                    className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition ${
+                      editingId ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                     placeholder="Nhập mã phụ tùng"
                   />
                 </div>
@@ -472,6 +495,7 @@ export default function AdminInventoriesPage() {
                     className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
                     placeholder="Nhập số lượng tối thiểu"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Khi tồn kho &lt; số này sẽ cảnh báo</p>
                 </div>
               </div>
 

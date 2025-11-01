@@ -126,17 +126,40 @@ export default function AdminStaffPage() {
     <div className="min-h-screen bg-gray-50">
 
       {/* HEADER */}
-      <div className="relative bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-6 max-w-6xl flex items-center gap-3">
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
-          >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            <span className="text-sm font-medium">Trang quản trị</span>
-          </button>
-
-          <div className="ml-auto flex items-center gap-2">
+      <div className="relative bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 max-w-6xl flex items-center justify-between p-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/admin/dashboard')}
+              className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              <span className="text-sm font-medium">Trang quản trị</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-emerald-600">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">EV Care</h1>
+                <p className="text-xs text-gray-500">Admin Panel</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <UserCog className="w-5 h-5 text-emerald-600" />
             <span className="text-sm text-gray-500">Quản lý nhân sự & phân quyền</span>
           </div>
@@ -171,9 +194,11 @@ export default function AdminStaffPage() {
                 {error && !loading && (
                   <tr><td colSpan={5} className="py-6 text-center text-red-600">{error}</td></tr>
                 )}
-                {!loading && !error && staff.map((s) => (
-                  <tr key={s._id} className="border-b hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 font-medium text-gray-800">{s._id.slice(-6) || '—'}</td>
+                {!loading && !error && staff.map((s) => {
+                  const staffId = s._id || s.staffId || '';
+                  return (
+                  <tr key={staffId} className="border-b hover:bg-gray-50 transition">
+                    <td className="py-2 px-3 font-medium text-gray-800">{staffId.slice(-6) || '—'}</td>
                     <td className="py-2 px-3">{s.fullName}</td>
                     <td className="py-2 px-3">
                       <div className="text-gray-700 flex flex-col">
@@ -207,7 +232,8 @@ export default function AdminStaffPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -382,27 +408,38 @@ export default function AdminStaffPage() {
 
 /* ===== COMPONENT: RoleBadge ===== */
 function RoleBadge({ role }: { role: string }) {
+  // Normalize role to lowercase for comparison
+  const normalizedRole = (role || 'staff').toLowerCase();
+  
   let color =
-    role === 'Admin'
+    normalizedRole === 'admin'
       ? 'bg-emerald-100 text-emerald-700'
-      : role === 'Staff'
+      : normalizedRole === 'staff'
       ? 'bg-blue-100 text-blue-700'
-      : 'bg-yellow-100 text-yellow-700';
+      : normalizedRole === 'technician'
+      ? 'bg-yellow-100 text-yellow-700'
+      : 'bg-gray-100 text-gray-700';
+      
   let icon =
-    role === 'Admin' ? (
+    normalizedRole === 'admin' ? (
       <Key className="w-3 h-3" />
-    ) : role === 'Staff' ? (
+    ) : normalizedRole === 'staff' ? (
       <UserCircle2 className="w-3 h-3" />
-    ) : (
+    ) : normalizedRole === 'technician' ? (
       <Wrench className="w-3 h-3" />
+    ) : (
+      <UserCircle2 className="w-3 h-3" />
     );
+  
+  // Format role display: capitalize first letter
+  const displayRole = normalizedRole.charAt(0).toUpperCase() + normalizedRole.slice(1);
 
   return (
     <span
       className={`px-3 py-1 text-xs font-medium rounded-full inline-flex items-center gap-1 ${color}`}
     >
       {icon}
-      {role}
+      {displayRole}
     </span>
   );
 }

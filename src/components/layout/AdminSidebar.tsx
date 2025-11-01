@@ -18,6 +18,7 @@ import {
   UserCog,
   Package,
   Car,
+  Building,
 } from 'lucide-react';
 
 export const AdminSidebar: React.FC = () => {
@@ -50,6 +51,11 @@ export const AdminSidebar: React.FC = () => {
       name: 'Phụ tùng',
       path: '/admin/inventories',
       icon: Package,
+    },
+    {
+      name: 'Trung tâm',
+      path: '/admin/centers',
+      icon: Building,
     },
     {
       name: 'Nhân viên',

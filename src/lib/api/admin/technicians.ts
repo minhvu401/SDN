@@ -2,11 +2,34 @@ import { API_BASE_URL, authHeaders, handleResponse } from '../../api/client';
 
 export interface TechnicianItem {
   _id: string;
-  name: string;
+  fullName?: string;
+  name?: string; // Alias for fullName
   email?: string;
   phone?: string;
+  password?: string; // Only for create
+  role?: string;
   specializations?: string[];
+  joinDate?: string;
+  bio?: string;
+  yearsOfExperience?: number;
   isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateTechnicianDto {
+  fullName: string;
+  phone: string;
+  password: string;
+  role?: string; // Default: "TECHNICIAN"
+  specializations?: string[];
+  joinDate?: string;
+  bio?: string;
+  yearsOfExperience?: number;
+}
+
+export interface SpecializationsResponse {
+  specializations: string[];
 }
 
 export async function getTechSpecializations() {
@@ -14,14 +37,18 @@ export async function getTechSpecializations() {
     method: 'GET',
     headers: authHeaders(),
   });
-  return handleResponse<string[]>(res);
+  const response = await handleResponse<SpecializationsResponse>(res);
+  return response.specializations || [];
 }
 
-export async function createTechnician(payload: Partial<TechnicianItem>) {
+export async function createTechnician(payload: CreateTechnicianDto) {
   const res = await fetch(`${API_BASE_URL}/technicians`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...payload,
+      role: payload.role || 'TECHNICIAN',
+    }),
   });
   return handleResponse<TechnicianItem>(res);
 }
