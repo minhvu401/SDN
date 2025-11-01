@@ -30,13 +30,33 @@ export interface AssignTechnicianDto {
   technicianId: string;
 }
 
+export interface StaffItem {
+  _id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  role: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function listStaff() {
+  const res = await fetch(`${API_BASE_URL}/staff`, {
+    method: 'GET',
+    headers: authHeaders(),
+  });
+  return handleResponse<StaffItem[]>(res);
+}
+
 export async function createStaff(payload: CreateStaffDto) {
   const res = await fetch(`${API_BASE_URL}/staff`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(payload),
   });
-  return handleResponse<any>(res);
+  return handleResponse<StaffItem>(res);
 }
 
 export async function getStaffBookings() {

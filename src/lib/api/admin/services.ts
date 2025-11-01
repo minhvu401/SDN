@@ -3,11 +3,17 @@ import { API_BASE_URL, authHeaders, handleResponse } from '../../api/client';
 export interface ServiceItem {
   _id: string;
   name: string;
-  type?: string;
+  serviceType?: string;
+  type?: string; // alias for serviceType
   description?: string;
-  price?: number;
+  basePrice?: number;
+  price?: number; // alias for basePrice
+  estimatedDuration?: number;
   duration?: number;
   isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export async function createService(payload: Partial<ServiceItem>) {

@@ -7,6 +7,7 @@ export interface InventoryItem {
   category?: string;
   description?: string;
   quantity?: number;
+  minQuantity?: number; // Số lượng tối thiểu để cảnh báo
   unitPrice?: number;
   supplier?: string;
   productLink?: string;

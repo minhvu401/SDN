@@ -11,12 +11,20 @@ export const Input: React.FC<InputProps> = ({
   label,
   error,
   className = '',
+  id,
+  name,
   ...props
 }) => {
+  // Generate id from name if not provided
+  const inputId = id || (name ? `input-${name}` : `input-${Math.random().toString(36).substring(2, 9)}`);
+  
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label 
+          htmlFor={inputId}
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           {label}
         </label>
       )}
@@ -29,6 +37,8 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
         <input
+          id={inputId}
+          name={name || inputId}
           className={`
             w-full px-3 py-2 border border-gray-300 rounded-lg
             focus:outline-none focus:ring-2 focus:border-transparent
@@ -39,11 +49,15 @@ export const Input: React.FC<InputProps> = ({
           style={{
             '--tw-ring-color': '#10B981'
           } as React.CSSProperties}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           {...props}
         />
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p id={`${inputId}-error`} className="mt-1 text-sm text-red-600" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );
