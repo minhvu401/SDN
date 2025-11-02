@@ -11,7 +11,6 @@ import {
   Wrench,
   MapPin,
   ArrowLeft,
-  Search,
   Eye,
   Phone,
 } from "lucide-react";
@@ -36,8 +35,6 @@ export default function StaffRequestsPage() {
   >(null);
   const [loadingBookings, setLoadingBookings] = useState(false);
 
-  const [filter, setFilter] = useState("Tất cả");
-  const [search, setSearch] = useState("");
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
   const safeString = (v: any) => {
@@ -55,30 +52,6 @@ export default function StaffRequestsPage() {
       );
     return "";
   };
-
-  const filtered = requests.filter((r) => {
-    const mapTabToStatus = (tab: string) => {
-      if (tab === "Chờ duyệt") return "pending";
-      if (tab === "Đã duyệt") return "confirmed";
-      if (tab === "Đã từ chối") return "rejected";
-      return "";
-    };
-    const statusMatch =
-      filter === "Tất cả" || r.status === mapTabToStatus(filter);
-    const q = search.trim().toLowerCase();
-    if (!q) return statusMatch;
-    const customer = safeString(r.customer).toLowerCase();
-    const vehicle = safeString(r.vehicle).toLowerCase();
-    const plate = safeString(r.plate).toLowerCase();
-    const service = safeString(r.service).toLowerCase();
-    return (
-      statusMatch &&
-      (customer.includes(q) ||
-        vehicle.includes(q) ||
-        plate.includes(q) ||
-        service.includes(q))
-    );
-  });
 
   const mapApiStatusToUi = (apiStatus: string) => {
     // map backend status strings to UI Vietnamese labels
@@ -246,75 +219,11 @@ export default function StaffRequestsPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <p className="text-sm text-gray-500 mb-1">Tổng yêu cầu</p>
-              <p className="text-xl font-bold text-emerald-600">
-                {requests.length}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-gray-500 mb-1">Chờ duyệt</p>
-              <p className="text-xl font-bold text-amber-600">
-                {requests.filter((r) => r.status === "pending").length}
-              </p>
-            </div>
-          </div>
+          {/* summary counters removed per request */}
         </div>
       </div>
 
-      {/* Bộ lọc và tìm kiếm */}
-      <div className="bg-white border-b border-gray-200 py-4">
-        <div className="px-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex gap-2">
-              {["Tất cả", "Chờ duyệt", "Đã duyệt", "Đã từ chối"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setFilter(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                    filter === tab
-                      ? "bg-emerald-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {tab}
-                  {tab !== "Tất cả" && (
-                    <span
-                      className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                        tab === "Chờ duyệt"
-                          ? "bg-amber-200 text-amber-800"
-                          : tab === "Đã duyệt"
-                          ? "bg-green-200 text-green-800"
-                          : "bg-red-200 text-red-800"
-                      }`}
-                    >
-                      {tab === "Chờ duyệt"
-                        ? requests.filter((r) => r.status === "pending").length
-                        : tab === "Đã duyệt"
-                        ? requests.filter((r) => r.status === "confirmed")
-                            .length
-                        : requests.filter((r) => r.status === "rejected")
-                            .length}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
 
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Danh sách */}
       <div className="container mx-auto px-6 pb-10 max-w-7xl">
@@ -325,7 +234,7 @@ export default function StaffRequestsPage() {
                 Danh sách yêu cầu
               </h3>
               <div className="text-sm text-gray-500">
-                Hiển thị {filtered.length} / {requests.length} yêu cầu
+                Hiển thị {requests.length} yêu cầu
               </div>
             </div>
           </div>
@@ -357,7 +266,7 @@ export default function StaffRequestsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && (
+                {requests.length === 0 && (
                   <tr>
                     <td colSpan={10} className="py-12 text-center">
                       <div className="flex flex-col items-center gap-3">
@@ -365,15 +274,12 @@ export default function StaffRequestsPage() {
                         <p className="text-gray-500 text-lg">
                           Không có yêu cầu nào
                         </p>
-                        <p className="text-gray-400 text-sm">
-                          Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
-                        </p>
                       </div>
                     </td>
                   </tr>
                 )}
 
-                {filtered.map((r, idx) => (
+                {requests.map((r: any, idx: number) => (
                   <tr
                     key={r.id ?? r.bookingId ?? idx}
                     className="border-b border-gray-100 hover:bg-gray-50 transition"
