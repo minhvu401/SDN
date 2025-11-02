@@ -49,7 +49,13 @@ export async function getMyProfile(id?: string) {
     method: "GET",
     headers: authHeaders(),
   });
-  return handleResponse<StaffProfile>(res);
+  // many backends return { success: true, data: { ... } }
+  const result = await handleResponse<any>(res);
+  // unwrap when backend uses { success, data } wrapper, otherwise return the object directly
+  if (result && typeof result === "object" && "data" in result) {
+    return result.data as StaffProfile;
+  }
+  return result as StaffProfile;
 }
 
 export async function updateMyProfile(payload: UpdateStaffProfilePayload) {
@@ -58,7 +64,12 @@ export async function updateMyProfile(payload: UpdateStaffProfilePayload) {
     headers: authHeaders(),
     body: JSON.stringify(payload),
   });
-  return handleResponse<StaffProfile>(res);
+  // unwrap common wrapper { success, data } when present
+  const result = await handleResponse<any>(res);
+  if (result && typeof result === "object" && ("data" in result)) {
+    return result.data as StaffProfile;
+  }
+  return result as StaffProfile;
 }
 
 export async function changeMyPassword(payload: ChangePasswordPayload) {
