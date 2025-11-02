@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   Users,
@@ -25,6 +26,7 @@ export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { logout } = useAuth();
 
   const navItems = [
     {
@@ -83,11 +85,7 @@ export const AdminSidebar: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // Xóa token và user data từ localStorage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    // Chuyển hướng về trang đăng nhập
-    window.location.href = '/login';
+    logout();
   };
 
   return (

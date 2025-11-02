@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RoleGuard } from '@/components/auth/RoleGuard';
+import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
   Users,
@@ -54,6 +56,7 @@ export default function StaffLayout({
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { logout } = useAuth();
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -64,14 +67,14 @@ export default function StaffLayout({
   };
 
   const handleLogout = () => {
-    // Implement logout logic
-    window.location.href = "/login";
+    logout();
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile menu button */}
-      <button
+    <RoleGuard allowedRoles={['staff']}>
+      <div className="min-h-screen bg-gray-50">
+        {/* Mobile menu button */}
+        <button
         onClick={toggleMobileSidebar}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white shadow-md"
       >
@@ -215,13 +218,14 @@ export default function StaffLayout({
       </div>
 
       {/* Main content area */}
-      <div
-        className={`lg:ml-64 transition-all duration-300 ${
-          isCollapsed ? "lg:ml-16" : "lg:ml-64"
-        }`}
-      >
-        <main className="min-h-screen">{children}</main>
+        <div
+          className={`lg:ml-64 transition-all duration-300 ${
+            isCollapsed ? "lg:ml-16" : "lg:ml-64"
+          }`}
+        >
+          <main className="min-h-screen">{children}</main>
+        </div>
       </div>
-    </div>
+    </RoleGuard>
   );
 }
