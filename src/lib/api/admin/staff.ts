@@ -77,6 +77,16 @@ export async function createStaff(payload: CreateStaffDto) {
   return handleResponse<StaffItem>(res);
 }
 
+// Admin: update staff profile by staff id (PATCH /staff/{id}/profile)
+export async function updateStaffProfile(id: string, payload: { email?: string; fullName?: string; phone?: string }) {
+  const res = await fetch(`${API_BASE_URL}/staff/${id}/profile`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<StaffItem>(res);
+}
+
 export async function getStaffBookings() {
   const res = await fetch(`${API_BASE_URL}/staff/bookings`, {
     method: 'GET',

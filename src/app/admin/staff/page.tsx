@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import {
   listStaff,
   createStaff,
+  updateStaffProfile,
   type StaffItem,
   type CreateStaffDto,
 } from '@/lib/api/admin/staff';
@@ -41,6 +42,10 @@ export default function AdminStaffPage() {
     role: 'staff',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editData, setEditData] = useState({ email: '', fullName: '', phone: '' });
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = (message: string, type: Toast['type'] = 'success') => {
@@ -122,6 +127,43 @@ export default function AdminStaffPage() {
     }
   };
 
+  const openEditModal = (s: StaffItem) => {
+    const id = s._id || s.staffId || '';
+    setEditingId(id);
+    setEditData({
+      email: s.email || '',
+      fullName: s.fullName || '',
+      phone: s.phone || '',
+    });
+    setIsEditOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditOpen(false);
+    setEditingId(null);
+    setEditData({ email: '', fullName: '', phone: '' });
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    setEditSubmitting(true);
+    try {
+      await updateStaffProfile(editingId, {
+        email: editData.email.trim(),
+        fullName: editData.fullName.trim(),
+        phone: editData.phone.trim(),
+      });
+      showToast('Cập nhật nhân viên thành công', 'success');
+      await loadStaff();
+      closeEditModal();
+    } catch (err: any) {
+      showToast(err?.message || 'Cập nhật thất bại', 'error');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -184,6 +226,7 @@ export default function AdminStaffPage() {
                   <th className="text-left py-2 px-3">Họ tên</th>
                   <th className="text-left py-2 px-3">Liên hệ</th>
                   <th className="text-left py-2 px-3">Vai trò</th>
+                  <th className="text-center py-2 px-3">Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -211,6 +254,17 @@ export default function AdminStaffPage() {
                     </td>
                     <td className="py-2 px-3">
                       <RoleBadge role={s.role || 'staff'} />
+                    </td>
+                    <td className="py-2 px-3 text-center">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          onClick={() => openEditModal(s)}
+                          className="p-1 rounded-md hover:bg-gray-100"
+                          title="Chỉnh sửa"
+                        >
+                          <Pencil className="w-4 h-4 text-emerald-600" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   );
@@ -372,6 +426,91 @@ export default function AdminStaffPage() {
                     <>
                       <Save className="w-4 h-4 mr-2" />
                       Thêm mới
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditOpen && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-[9999] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full mx-4 max-h-[90vh] overflow-hidden border border-gray-100 transform transition-all animate-in zoom-in-95 duration-200">
+            <div className="sticky top-0 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-100 px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center">
+                  <Pencil className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-800">Chỉnh sửa nhân viên</h2>
+              </div>
+              <button
+                onClick={closeEditModal}
+                className="p-2 rounded-lg hover:bg-white/80 text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-80px)]">
+              <div>
+                <label htmlFor="edit-fullName" className="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
+                <input
+                  id="edit-fullName"
+                  name="fullName"
+                  type="text"
+                  required
+                  value={editData.fullName}
+                  onChange={(e) => setEditData({ ...editData, fullName: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  id="edit-email"
+                  name="email"
+                  type="email"
+                  required
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="edit-phone" className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                <input
+                  id="edit-phone"
+                  name="phone"
+                  type="text"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
+                  disabled={editSubmitting}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="inline-flex items-center bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 font-medium shadow-sm"
+                >
+                  {editSubmitting ? 'Đang xử lý...' : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Lưu thay đổi
                     </>
                   )}
                 </button>
