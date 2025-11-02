@@ -8,6 +8,7 @@ import {
   StaffProfile,
   StaffDetail,
 } from "@/lib/api/staff/profile";
+import { Eye, EyeOff } from "lucide-react";
 import { getIdFromAccessToken } from "@/lib/api/client";
 
 export default function StaffProfilePage() {
@@ -16,6 +17,7 @@ export default function StaffProfilePage() {
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -25,9 +27,19 @@ export default function StaffProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
 
+  // validation helpers
+  const emailValid = email === "" ? true : /@gmail\.com$/i.test(email);
+  const phoneValid = phone === "" ? true : /^\d{10,11}$/.test(phone);
+
   // password form
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
+  // show/hide password toggles
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -66,13 +78,28 @@ export default function StaffProfilePage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    // Prevent accidental save when not in edit mode
+    if (!isEditing) return;
     setSaving(true);
     setError(null);
     setSuccess(null);
+    // validate fields before submit
+    if (!emailValid) {
+      setError("Email phải có đuôi @gmail.com");
+      setSaving(false);
+      return;
+    }
+    if (!phoneValid) {
+      setError("Số điện thoại không hợp lệ (10 hoặc 11 chữ số)");
+      setSaving(false);
+      return;
+    }
     try {
       const updated = await updateMyProfile({ email, fullName, phone });
       setProfile(updated);
       setSuccess("Cập nhật hồ sơ thành công");
+      // exit edit mode after successful save
+      setIsEditing(false);
     } catch (err: any) {
       setError(err?.message || "Cập nhật thất bại");
     } finally {
@@ -85,8 +112,21 @@ export default function StaffProfilePage() {
     setPasswordSaving(true);
     setError(null);
     setSuccess(null);
-    if (!currentPassword || !newPassword) {
-      setError("Vui lòng nhập mật khẩu hiện tại và mật khẩu mới");
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setError("Vui lòng điền đầy đủ cả 3 trường mật khẩu");
+      setPasswordSaving(false);
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setError("Mật khẩu mới và xác nhận mật khẩu không khớp");
+      setPasswordSaving(false);
+      return;
+    }
+
+    // Additional rule: new password must not be the same as current password
+    if (newPassword === currentPassword) {
+      setError("Mật khẩu mới không được giống mật khẩu hiện tại");
       setPasswordSaving(false);
       return;
     }
@@ -95,6 +135,7 @@ export default function StaffProfilePage() {
       await changeMyPassword({ currentPassword, newPassword });
       setCurrentPassword("");
       setNewPassword("");
+      setConfirmNewPassword("");
       setSuccess("Mật khẩu đã được thay đổi");
     } catch (err: any) {
       setError(err?.message || "Thay đổi mật khẩu thất bại");
@@ -133,9 +174,12 @@ export default function StaffProfilePage() {
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200 ${
+                      !isEditing ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     placeholder="Nguyễn Văn A"
                     required
+                    disabled={!isEditing}
                   />
                 </label>
 
@@ -145,10 +189,18 @@ export default function StaffProfilePage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200 ${
+                      !isEditing ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     placeholder="you@example.com"
                     required
+                    disabled={!isEditing}
                   />
+                  {isEditing && email && !emailValid && (
+                    <p className="text-sm text-red-600 mt-1">
+                      Email phải có đuôi @gmail.com
+                    </p>
+                  )}
                 </label>
 
                 <label className="block">
@@ -158,37 +210,75 @@ export default function StaffProfilePage() {
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200 ${
+                      !isEditing ? "bg-gray-50 cursor-not-allowed" : ""
+                    }`}
                     placeholder="0912xxxxxx"
+                    disabled={!isEditing}
                   />
+                  {isEditing && phone && !phoneValid && (
+                    <p className="text-sm text-red-600 mt-1">
+                      Số điện thoại phải gồm 10 hoặc 11 chữ số
+                    </p>
+                  )}
                 </label>
               </div>
 
               <div className="mt-6 flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {saving ? "Đang lưu..." : "Lưu thay đổi"}
-                </button>
+                {!isEditing ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                  >
+                    Chỉnh sửa
+                  </button>
+                ) : (
+                  <>
+                    {/** Save only enabled when values changed (dirty) */}
+                    {(() => {
+                      const orig = profile as any;
+                      const dirty =
+                        !!profile &&
+                        (email !== (orig?.email ?? "") ||
+                          fullName !== (orig?.fullName ?? "") ||
+                          phone !== (orig?.phone ?? ""));
+                      return (
+                        <button
+                          type="submit"
+                          disabled={
+                            !dirty || saving || !emailValid || !phoneValid
+                          }
+                          className={`px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-60 ${
+                            !dirty || !emailValid || !phoneValid
+                              ? "cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                        </button>
+                      );
+                    })()}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    // revert to last saved
-                    if (profile) {
-                      setEmail(profile.email ?? "");
-                      setFullName(profile.fullName ?? "");
-                      setPhone(profile.phone ?? "");
-                      setError(null);
-                      setSuccess(null);
-                    }
-                  }}
-                  className="px-4 py-2 border rounded-lg"
-                >
-                  Hủy
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // revert to last saved and exit edit mode
+                        if (profile) {
+                          setEmail(profile.email ?? "");
+                          setFullName(profile.fullName ?? "");
+                          setPhone(profile.phone ?? "");
+                        }
+                        setError(null);
+                        setSuccess(null);
+                        setIsEditing(false);
+                      }}
+                      className="px-4 py-2 border rounded-lg"
+                    >
+                      Hủy
+                    </button>
+                  </>
+                )}
               </div>
             </form>
 
@@ -198,24 +288,36 @@ export default function StaffProfilePage() {
             >
               <h2 className="text-lg font-semibold mb-4">Đổi mật khẩu</h2>
               <div className="grid grid-cols-1 gap-4">
-                <label className="block">
+                <label className="block relative">
                   <div className="text-sm text-gray-700 mb-1">
                     Mật khẩu hiện tại
                   </div>
                   <input
-                    type="password"
+                    type={showCurrent ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
                     placeholder="Mật khẩu hiện tại"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrent(!showCurrent)}
+                    className="absolute right-3 top-8 p-1 text-gray-500"
+                    aria-label={showCurrent ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  >
+                    {showCurrent ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
                 </label>
 
-                <label className="block">
+                <label className="block relative">
                   <div className="text-sm text-gray-700 mb-1">Mật khẩu mới</div>
                   <input
-                    type="password"
+                    type={showNew ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
@@ -223,6 +325,72 @@ export default function StaffProfilePage() {
                     minLength={6}
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(!showNew)}
+                    className="absolute right-3 top-8 p-1 text-gray-500"
+                    aria-label={
+                      showNew ? "Ẩn mật khẩu mới" : "Hiện mật khẩu mới"
+                    }
+                  >
+                    {showNew ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                  {currentPassword &&
+                    newPassword &&
+                    newPassword === currentPassword && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Mật khẩu mới không được giống mật khẩu hiện tại
+                      </p>
+                    )}
+                </label>
+
+                <label className="block relative">
+                  <div className="text-sm text-gray-700 mb-1">
+                    Xác nhận mật khẩu mới
+                  </div>
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    placeholder="Nhập lại mật khẩu mới"
+                    minLength={6}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-8 p-1 text-gray-500"
+                    aria-label={
+                      showConfirm
+                        ? "Ẩn xác nhận mật khẩu"
+                        : "Hiện xác nhận mật khẩu"
+                    }
+                  >
+                    {showConfirm ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                  {confirmNewPassword &&
+                    newPassword &&
+                    confirmNewPassword !== newPassword && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Xác nhận mật khẩu không khớp với mật khẩu mới
+                      </p>
+                    )}
+                  {confirmNewPassword &&
+                    currentPassword &&
+                    confirmNewPassword === currentPassword && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Xác nhận mật khẩu không được giống mật khẩu hiện tại
+                      </p>
+                    )}
                 </label>
               </div>
 
