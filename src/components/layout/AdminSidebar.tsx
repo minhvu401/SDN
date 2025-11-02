@@ -68,11 +68,6 @@ export const AdminSidebar: React.FC = () => {
       icon: UserCog,
     },
     {
-      name: 'Tài chính',
-      path: '/admin/finance',
-      icon: DollarSign,
-    },
-    {
       name: 'Báo cáo',
       path: '/admin/reports',
       icon: FileText,
