@@ -42,7 +42,7 @@ export const Navbar: React.FC = () => {
   const navItems = [
     { name: 'Trang chủ', path: '/' },
     { name: 'Dịch vụ', path: '/services' },
-    { name: 'Đặt lịch', path: '/booking' },
+    { name: 'Đặt lịch', path: '/customer/booking' },
     { name: 'Liên hệ', path: '/contact' },
   ];
 
@@ -134,7 +134,7 @@ export const Navbar: React.FC = () => {
                         <Settings className="w-4 h-4 text-emerald-600" />
                         <span>Cài đặt</span>
                       </Link>
-                      <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                      <Link href="/customer/change-password" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
                         <KeyRound className="w-4 h-4 text-emerald-600" />
                         <span>Đổi mật khẩu</span>
                       </Link>

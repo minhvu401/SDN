@@ -188,7 +188,6 @@ export default function CustomerAppointmentsPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 text-gray-700">
               <tr className="border-b">
-                <th className="text-left px-4 py-3">Mã lịch</th>
                 <th className="text-left px-4 py-3">Thời gian</th>
                 <th className="text-left px-4 py-3">Trung tâm</th>
                 <th className="text-left px-4 py-3">Dịch vụ</th>
@@ -207,9 +206,6 @@ export default function CustomerAppointmentsPage() {
 
               {filteredAppointments.map((a) => (
                 <tr key={a.bookingId} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-800">
-                    {a.bookingId}
-                  </td>
                   <td className="px-4 py-3 text-gray-700">
                     <CalendarDays className="inline w-4 h-4 mr-1 text-gray-500" />
                     {a.bookingDate

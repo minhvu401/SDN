@@ -6,27 +6,27 @@ import {
   User,
   Mail,
   Phone,
-  Home,
-  CreditCard,
-  Wallet,
-  Building,
   ArrowLeft,
   Save,
   CheckCircle2,
   Car,
   ShieldCheck,
   Wrench,
+  RefreshCw,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getProfile } from '@/lib/api/auth';
 import {
   getCustomerProfile,
   updateCustomerProfile,
+  updateCustomerMaintenanceDate,
 } from '@/lib/api/customer/profile';
-import { toast } from 'react-hot-toast';  
+import { toast } from 'react-hot-toast';
 
 type Vehicle = {
-  // Define the properties of Vehicle here
+  _id?: string;
+  carModel?: string;
+  licensePlate?: string;
 };
 
 type CustomerProfile = {
@@ -34,10 +34,10 @@ type CustomerProfile = {
   username: string;
   fullName: string;
   phone: string;
-  role: string; // Ensure this is defined
-  vehicles: Vehicle[]; // Ensure this is an array of Vehicle
-  isActive: boolean; // Ensure this is defined
-  maintenanceCount: number; // Ensure this is defined
+  role: string;
+  vehicles: Vehicle[];
+  isActive: boolean;
+  maintenanceCount: number;
   address: string;
   paymentMethod: string;
   bankName: string;
@@ -46,7 +46,6 @@ type CustomerProfile = {
 
 export default function CustomerProfilePage() {
   const router = useRouter();
-
   const [profile, setProfile] = useState<CustomerProfile>({
     email: '',
     username: '',
@@ -67,6 +66,7 @@ export default function CustomerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
 
+  // 🟢 Load thông tin khách hàng
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -74,10 +74,9 @@ export default function CustomerProfilePage() {
         const authData = await getProfile();
         if (!mounted) return;
         setUserId(authData._id);
-        // Set email from authData immediately
-        setProfile(prev => ({
+        setProfile((prev) => ({
           ...prev,
-          email: authData.email || ''
+          email: authData.email || '',
         }));
 
         const customer = await getCustomerProfile(authData._id);
@@ -89,13 +88,13 @@ export default function CustomerProfilePage() {
           phone: customer.phone || '',
           vehicles: customer.vehicles || [],
           isActive: customer.isActive ?? false,
-          maintenanceCount: customer.maintenanceCount ?? 0,
+          maintenanceCount: Number(customer.maintenanceCount ?? 0), // ✅ ép về số
           address: customer.address || '',
           paymentMethod: customer.paymentMethod || prev.paymentMethod,
           bankName: customer.bankName || '',
           cardNumber: customer.cardNumber || '',
         }));
-      } catch (err: unknown) {
+      } catch {
         setError('Không thể tải hồ sơ. Vui lòng đăng nhập lại.');
         router.push('/login');
       } finally {
@@ -111,6 +110,7 @@ export default function CustomerProfilePage() {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
+  // 🟢 Lưu hồ sơ
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) return;
@@ -129,9 +129,28 @@ export default function CustomerProfilePage() {
     } catch {
       toast.error('Cập nhật thất bại. Vui lòng thử lại.');
       setError('Cập nhật thất bại. Vui lòng thử lại.');
-      
     }
   };
+
+  // // 🧩 Cập nhật ngày bảo dưỡng
+  // const handleMaintenanceUpdate = async () => {
+  //   if (!userId) return;
+  //   try {
+  //     const now = new Date().toISOString();
+  //     await updateCustomerMaintenanceDate(userId, now);
+  //     toast.success('Đã cập nhật bảo dưỡng!');
+  //     const refreshed = await getCustomerProfile(userId);
+  //     setProfile((prev) => ({
+  //       ...prev,
+  //       maintenanceCount: Number(refreshed.maintenanceCount ?? 0),
+  //     }));
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error('Không thể cập nhật lịch bảo dưỡng.');
+  //   }
+  // };
+
+  if (loading) return <p className="text-center mt-10 text-gray-600">Đang tải hồ sơ...</p>;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -150,14 +169,11 @@ export default function CustomerProfilePage() {
         <h1 className="text-3xl font-bold text-emerald-700 font-display">
           Thông tin cá nhân
         </h1>
-        <p className="text-gray-600 mt-2">
-          Cập nhật hồ sơ và phương thức thanh toán mặc định của bạn
-        </p>
+        <p className="text-gray-600 mt-2">Xem và cập nhật hồ sơ của bạn.</p>
       </div>
 
       {/* Nội dung */}
       <div className="container mx-auto px-6 py-10 max-w-3xl">
-        {loading && <p className="text-center text-gray-600">Đang tải hồ sơ...</p>}
         {error && <p className="text-center text-red-600">{error}</p>}
         <form
           onSubmit={handleSave}
@@ -170,9 +186,7 @@ export default function CustomerProfilePage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Tên đăng nhập
-                </label>
+                <label className="text-sm text-gray-700 font-medium">Tên đăng nhập</label>
                 <input
                   type="text"
                   value={profile.username}
@@ -181,20 +195,17 @@ export default function CustomerProfilePage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Email
-                </label>
+                <label className="text-sm text-gray-700 font-medium">Email</label>
                 <div className="flex items-center border rounded-md mt-1 px-2 bg-gray-100">
                   <Mail className="w-4 h-4 text-gray-500" />
                   <input
                     type="text"
                     value={profile.email}
                     disabled
-                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none bg-gray-100 text-gray-700 cursor-not-allowed"
+                    className="flex-1 p-2 bg-gray-100 text-gray-700 cursor-not-allowed outline-none"
                   />
                 </div>
               </div>
-              
               <div>
                 <label className="text-sm text-gray-700 font-medium">Họ và tên</label>
                 <input
@@ -205,25 +216,21 @@ export default function CustomerProfilePage() {
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Số điện thoại
-                </label>
+                <label className="text-sm text-gray-700 font-medium">Số điện thoại</label>
                 <div className="flex items-center border rounded-md mt-1 px-2">
                   <Phone className="w-4 h-4 text-gray-500" />
                   <input
                     type="text"
                     value={profile.phone}
                     onChange={(e) => handleChange('phone', e.target.value)}
-                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none"
+                    className="flex-1 p-2 outline-none"
                   />
                 </div>
               </div>
-
-              
             </div>
 
-            {/* Trạng thái & số lần bảo dưỡng */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
+            {/* Trạng thái & bảo dưỡng */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5 items-center">
               <div className="flex items-center gap-2 text-sm text-gray-700">
                 <ShieldCheck
                   className={`w-5 h-5 ${
@@ -235,21 +242,30 @@ export default function CustomerProfilePage() {
                   <b>{profile.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}</b>
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <Wrench className="w-5 h-5 text-emerald-600" />
-                <span>Bảo dưỡng đã thực hiện: <b>{profile.maintenanceCount}</b></span>
+              <div className="flex items-center gap-3 text-sm text-gray-700">
+                {/* <Wrench className="w-5 h-5 text-emerald-600" /> */}
+                {/* <span>
+                  Bảo dưỡng đã thực hiện: <b>{profile.maintenanceCount}</b>
+                </span> */}
+                {/* <button
+                  type="button"
+                  onClick={handleMaintenanceUpdate}
+                  className="flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition text-xs"
+                >
+                  <RefreshCw className="w-4 h-4" /> Cập nhật
+                </button> */}
               </div>
             </div>
 
-            {/* Thông tin xe */}
+            {/* Danh sách xe */}
             {profile.vehicles?.length > 0 && (
               <div className="mt-5">
                 <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                   <Car className="w-4 h-4 text-emerald-600" /> Phương tiện đã đăng ký
                 </h3>
                 <ul className="mt-2 space-y-1 text-sm text-gray-700">
-                  {profile.vehicles.map((v: any) => (
-                    <li key={v._id} className="flex justify-between border-b pb-1">
+                  {profile.vehicles.map((v, i) => (
+                    <li key={i} className="flex justify-between border-b pb-1">
                       <span>{v.carModel}</span>
                       <span className="text-gray-500">{v.licensePlate}</span>
                     </li>
@@ -257,54 +273,6 @@ export default function CustomerProfilePage() {
                 </ul>
               </div>
             )}
-          </div>
-
-          {/* Phương thức thanh toán */}
-          <div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-emerald-600" /> Phương thức thanh toán
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div>
-                <label className="text-sm text-gray-700 font-medium">Phương thức</label>
-                <select
-                  value={profile.paymentMethod}
-                  onChange={(e) => handleChange('paymentMethod', e.target.value)}
-                  className="w-full border rounded-md p-2 mt-1 focus:ring-emerald-500 focus:border-emerald-500"
-                >
-                  <option>Thẻ tín dụng</option>
-                  <option>Ví Momo</option>
-                  <option>Ví ZaloPay</option>
-                  <option>Chuyển khoản ngân hàng</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm text-gray-700 font-medium">Ngân hàng / Ví</label>
-                <div className="flex items-center border rounded-md mt-1 px-2">
-                  <Building className="w-4 h-4 text-gray-500" />
-                  <input
-                    type="text"
-                    value={profile.bankName}
-                    onChange={(e) => handleChange('bankName', e.target.value)}
-                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Số thẻ / Tài khoản
-                </label>
-                <div className="flex items-center border rounded-md mt-1 px-2">
-                  <Wallet className="w-4 h-4 text-gray-500" />
-                  <input
-                    type="text"
-                    value={profile.cardNumber}
-                    onChange={(e) => handleChange('cardNumber', e.target.value)}
-                    className="flex-1 p-2 focus:ring-0 focus:border-0 outline-none"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Nút lưu */}
