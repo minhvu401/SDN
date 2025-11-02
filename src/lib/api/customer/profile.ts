@@ -66,3 +66,21 @@ export async function updateCustomerProfile(
   const res = await handleResponse<any>(response);
   return res && res.data ? res.data as CustomerProfile : res as CustomerProfile;
 }
+// 🧩 Cập nhật ngày bảo dưỡng cho khách hàng (tăng maintenanceCount)
+export async function updateCustomerMaintenanceDate(
+  id: string,
+  maintenanceDate: string
+): Promise<void> {
+  const payload = { maintenanceDate };
+
+  const response = await fetch(`${API_BASE_URL}/customers/${id}/maintenance-date`, {
+    method: 'PATCH',
+    headers: {
+      ...authHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  await handleResponse(response);
+}
