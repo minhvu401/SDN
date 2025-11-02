@@ -16,6 +16,9 @@ import {
   ChevronRight,
   Calendar,
   UserCog,
+  Package,
+  Car,
+  Building,
 } from 'lucide-react';
 
 export const AdminSidebar: React.FC = () => {
@@ -30,9 +33,9 @@ export const AdminSidebar: React.FC = () => {
       icon: LayoutDashboard,
     },
     {
-      name: 'Khách hàng',
+      name: 'Khách hàng & xe',
       path: '/admin/customers',
-      icon: Users,
+      icon: Car,
     },
     {
       name: 'Lịch hẹn',
@@ -46,8 +49,13 @@ export const AdminSidebar: React.FC = () => {
     },
     {
       name: 'Phụ tùng',
-      path: '/admin/parts',
-      icon: Wrench,
+      path: '/admin/inventories',
+      icon: Package,
+    },
+    {
+      name: 'Trung tâm',
+      path: '/admin/centers',
+      icon: Building,
     },
     {
       name: 'Nhân viên',

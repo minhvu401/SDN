@@ -83,17 +83,40 @@ export default function AdminFinancePage() {
     <div className="min-h-screen bg-gray-50">
 
       {/* HEADER */}
-      <div className="relative bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-6 max-w-6xl flex items-center gap-3">
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
-          >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            <span className="text-sm font-medium">Trang quản trị</span>
-          </button>
-
-          <div className="ml-auto flex items-center gap-2">
+      <div className="relative bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 max-w-6xl flex items-center justify-between p-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/admin/dashboard')}
+              className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              <span className="text-sm font-medium">Trang quản trị</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-emerald-600">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">EV Care</h1>
+                <p className="text-xs text-gray-500">Admin Panel</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <Wallet className="w-5 h-5 text-emerald-600" />
             <span className="text-sm text-gray-500">Quản lý tài chính & hóa đơn</span>
           </div>
