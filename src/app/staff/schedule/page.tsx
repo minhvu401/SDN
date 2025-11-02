@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Calendar,
@@ -12,8 +12,14 @@ import {
   UserPlus,
   Save,
   Circle,
+  XCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  getActiveTechnicians,
+  getStaffBookings,
+  assignTechnicianToBooking,
+} from '../../../lib/api/staff/booking';
 
 export default function StaffSchedulePage() {
   const router = useRouter();
@@ -83,6 +89,13 @@ export default function StaffSchedulePage() {
     capacity: 3,
   });
 
+  // --- API-driven assignment state (confirmed bookings + active technicians)
+  const [confirmedBookings, setConfirmedBookings] = useState<any[]>([]);
+  const [schedActiveTechnicians, setSchedActiveTechnicians] = useState<any[]>([]);
+  const [selectedBookingToAssign, setSelectedBookingToAssign] = useState('');
+  const [selectedTechForBooking, setSelectedTechForBooking] = useState('');
+  const [loadingAssign, setLoadingAssign] = useState(false);
+
   const handleAssign = () => {
     if (!newTech || !selectedShift) {
       alert('⚠️ Vui lòng chọn ca và nhập tên kỹ thuật viên!');
@@ -118,6 +131,59 @@ export default function StaffSchedulePage() {
     setSchedules([...schedules, newSchedule]);
     setNewShift({ shift: '', time: '', date: '', capacity: 3 });
     setShowAddShift(false);
+  };
+
+  // Load confirmed bookings (status === 'confirmed') for assignment
+  const loadConfirmedBookings = async () => {
+    try {
+      const res = await getStaffBookings();
+      if (res && res.success) {
+        const confirmed = (res.data || []).filter((b: any) => b.status === 'confirmed');
+        setConfirmedBookings(
+          confirmed.map((b: any) => ({
+            id: b.bookingId,
+            label: `${b.customer?.fullName ?? 'Khách hàng'} • ${b.licensePlates?.[0] ?? ''}`,
+            raw: b,
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('loadConfirmedBookings', err);
+    }
+  };
+
+  const loadSchedActiveTechnicians = async () => {
+    try {
+      const res = await getActiveTechnicians();
+      if (res && res.success) setSchedActiveTechnicians(res.data || []);
+    } catch (err) {
+      console.error('loadSchedActiveTechnicians', err);
+    }
+  };
+
+  useEffect(() => {
+    // load confirmed bookings and active technicians for schedule assignment
+    loadConfirmedBookings();
+    loadSchedActiveTechnicians();
+  }, []);
+
+  const handleAssignBookingToTech = async () => {
+    if (!selectedBookingToAssign || !selectedTechForBooking) return alert('Vui lòng chọn booking và kỹ thuật viên');
+    try {
+      setLoadingAssign(true);
+      await assignTechnicianToBooking(selectedBookingToAssign, selectedTechForBooking);
+      alert('Gán kỹ thuật viên cho booking thành công');
+      // refresh confirmed bookings
+      await loadConfirmedBookings();
+      setSelectedBookingToAssign('');
+      setSelectedTechForBooking('');
+    } catch (err) {
+      console.error('handleAssignBookingToTech', err);
+      const message = err instanceof Error ? err.message : 'Gán thất bại';
+      alert(message);
+    } finally {
+      setLoadingAssign(false);
+    }
   };
 
   const removeTechnician = (scheduleId: string, techName: string) => {
@@ -216,36 +282,48 @@ export default function StaffSchedulePage() {
 
           {/* Phân công kỹ thuật viên */}
           <div className="mt-4 pt-4 border-t">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Phân công kỹ thuật viên</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Phân công kỹ thuật viên (Gán booking đã được duyệt)</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <select
-                value={selectedShift}
-                onChange={(e) => setSelectedShift(e.target.value)}
+                value={selectedBookingToAssign}
+                onChange={(e) => setSelectedBookingToAssign(e.target.value)}
                 className="border rounded-md px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="">-- Chọn ca làm --</option>
-                {filteredSchedules.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.shift} ({s.time})
+                <option value="">-- Chọn booking đã duyệt --</option>
+                {confirmedBookings.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
                   </option>
                 ))}
               </select>
 
-              <input
-                type="text"
-                value={newTech}
-                onChange={(e) => setNewTech(e.target.value)}
-                placeholder="Nhập tên kỹ thuật viên..."
+              <select
+                value={selectedTechForBooking}
+                onChange={(e) => setSelectedTechForBooking(e.target.value)}
                 className="border rounded-md px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
-              />
-
-              <button
-                onClick={handleAssign}
-                className="inline-flex items-center justify-center bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition text-sm"
               >
-                <PlusCircle className="w-4 h-4 mr-1" />
-                Thêm vào ca
-              </button>
+                <option value="">-- Chọn kỹ thuật viên --</option>
+                {schedActiveTechnicians.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.fullName} • {t.phone}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex">
+                <button
+                  onClick={handleAssignBookingToTech}
+                  disabled={loadingAssign}
+                  className="inline-flex items-center justify-center bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition text-sm w-full"
+                >
+                  {loadingAssign ? 'Đang gán...' : (
+                    <>
+                      <PlusCircle className="w-4 h-4 mr-1" />
+                      Gán kỹ thuật viên
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

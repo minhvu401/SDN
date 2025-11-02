@@ -17,6 +17,29 @@ export async function handleResponse<T>(res: Response): Promise<T> {
     } catch {
       // Keep default message
     }
+    // If auth expired (401) clear local tokens and redirect to login so user can re-auth.
+    if (res.status === 401) {
+      try {
+        if (typeof window !== "undefined") {
+          // remove known token keys if present
+          try {
+            localStorage.removeItem("accessToken");
+          } catch {}
+          try {
+            localStorage.removeItem("refreshToken");
+          } catch {}
+          // redirect to login with a query flag so UI can show an explanatory message
+          const loginPath = "/login?reason=expired";
+          // avoid infinite loops if already on login
+          if (!window.location.pathname.startsWith("/login")) {
+            window.location.href = loginPath;
+          }
+        }
+      } catch (e) {
+        // ignore any errors during cleanup
+      }
+    }
+
     throw new Error(message);
   }
 
