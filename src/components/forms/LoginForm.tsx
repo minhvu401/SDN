@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { login as loginApi } from '../../lib/api/auth';
-import { Wrench } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
   const router = useRouter();
@@ -151,15 +150,7 @@ export const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {/* 🔧 Đăng nhập kỹ thuật viên */}
-        <Button
-          variant="outline"
-          className="w-full text-base font-medium mb-3 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-          onClick={() => router.push('/technician/login')}
-        >
-          <Wrench className="w-4 h-4 mr-2" />
-          Đăng nhập kỹ thuật viên
-        </Button>
+        {/* Removed technician login quick button per request */}
 
         <Button
           variant="outline"
