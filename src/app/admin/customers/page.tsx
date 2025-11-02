@@ -50,6 +50,7 @@ export default function AdminCustomersPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [initialVehicles, setInitialVehicles] = useState<Array<{ carModel: string; licensePlate: string }>>([]);
 
   const showToast = (message: string, type: Toast['type'] = 'success') => {
     const id = Date.now().toString();
@@ -80,6 +81,13 @@ export default function AdminCustomersPage() {
   const handleOpenForm = (customer?: CustomerItem) => {
     if (customer) {
       setEditingId(customer._id);
+      const initialVehiclesList = customer.vehicles?.length
+        ? customer.vehicles.map((v) => ({
+            carModel: v.carModel || '',
+            licensePlate: v.licensePlate || '',
+          }))
+        : [];
+      setInitialVehicles(initialVehiclesList);
       setFormData({
         username: customer.username || '',
         email: customer.email || '',
@@ -88,15 +96,13 @@ export default function AdminCustomersPage() {
         phone: customer.phone || '',
         address: customer.address || '',
         note: customer.note || '',
-        vehicles: customer.vehicles?.length
-          ? customer.vehicles.map((v) => ({
-              carModel: v.carModel || '',
-              licensePlate: v.licensePlate || '',
-            }))
+        vehicles: initialVehiclesList.length > 0 
+          ? initialVehiclesList 
           : [{ carModel: '', licensePlate: '' }],
       });
     } else {
       setEditingId(null);
+      setInitialVehicles([]);
       setFormData({
         username: '',
         email: '',
@@ -114,6 +120,7 @@ export default function AdminCustomersPage() {
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
+    setInitialVehicles([]);
     setFormData({
       username: '',
       email: '',
@@ -137,19 +144,61 @@ export default function AdminCustomersPage() {
       return;
     }
 
+    // Lọc và loại bỏ trùng lặp xe
+    const validVehicles = formData.vehicles
+      .filter((v) => v.carModel?.trim() && v.licensePlate?.trim())
+      .map((v) => ({
+        carModel: v.carModel.trim(),
+        licensePlate: v.licensePlate.trim(),
+      }));
+
+    // Loại bỏ trùng lặp: chỉ giữ lại xe đầu tiên nếu có nhiều xe giống nhau
+    const uniqueVehicles = validVehicles.filter((v, index, self) => {
+      return (
+        index ===
+        self.findIndex(
+          (t) =>
+            t.carModel === v.carModel && t.licensePlate === v.licensePlate
+        )
+      );
+    });
+
+    // Kiểm tra trùng lặp và cảnh báo
+    if (validVehicles.length !== uniqueVehicles.length) {
+      showToast('Có xe trùng lặp trong danh sách. Đã tự động loại bỏ.', 'error');
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (editingId) {
-        await updateCustomer(editingId, {
+        // Khi chỉnh sửa: chỉ gửi các xe mới (không có trong danh sách ban đầu)
+        const newVehicles = uniqueVehicles.filter((v) => {
+          return !initialVehicles.some(
+            (iv) =>
+              iv.carModel?.trim() === v.carModel &&
+              iv.licensePlate?.trim() === v.licensePlate
+          );
+        });
+
+        // Không gửi email khi cập nhật vì backend không cho phép
+        // Chỉ gửi các trường có giá trị, loại bỏ undefined và empty string
+        const updatePayload: any = {
           fullName: formData.fullName.trim(),
           phone: formData.phone.trim(),
-          email: formData.email.trim() || undefined,
-          address: formData.address.trim() || undefined,
-          note: formData.note.trim() || undefined,
-          vehicles: formData.vehicles.filter(
-            (v) => v.carModel && v.licensePlate
-          ),
-        });
+        };
+        
+        if (formData.address.trim()) {
+          updatePayload.address = formData.address.trim();
+        }
+        if (formData.note.trim()) {
+          updatePayload.note = formData.note.trim();
+        }
+        if (newVehicles.length > 0) {
+          updatePayload.vehicles = newVehicles;
+        }
+        
+        await updateCustomer(editingId, updatePayload);
         handleCloseForm();
         showToast('Cập nhật khách hàng thành công!', 'success');
       } else {
@@ -161,16 +210,39 @@ export default function AdminCustomersPage() {
           phone: formData.phone.trim(),
           address: formData.address.trim() || undefined,
           note: formData.note.trim() || undefined,
-          vehicles: formData.vehicles.filter(
-            (v) => v.carModel && v.licensePlate
-          ),
+          vehicles: uniqueVehicles,
         });
         handleCloseForm();
         showToast('Thêm khách hàng thành công!', 'success');
       }
       loadCustomers();
     } catch (err: any) {
-      showToast(err.message || 'Có lỗi xảy ra', 'error');
+      // Xử lý lỗi chi tiết hơn
+      let errorMessage = 'Có lỗi xảy ra';
+      
+      // Nếu là Error object
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } 
+      // Nếu là object với message
+      else if (err && typeof err === 'object') {
+        if (err.message) {
+          errorMessage = err.message;
+        } else if (err.error) {
+          errorMessage = err.error;
+        }
+      }
+      // Nếu là string
+      else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      // Kiểm tra nếu là lỗi conflict về xe trùng
+      if (errorMessage.includes('đã tồn tại') || errorMessage.includes('Conflict') || errorMessage.includes('409')) {
+        showToast(errorMessage || 'Xe đã tồn tại trong hệ thống. Vui lòng kiểm tra lại.', 'error');
+      } else {
+        showToast(errorMessage, 'error');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -502,53 +574,87 @@ export default function AdminCustomersPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Xe sở hữu
                 </label>
-                {formData.vehicles.map((vehicle, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <select
-                        value={vehicle.carModel}
-                        onChange={(e) => {
-                          const newVehicles = [...formData.vehicles];
-                          newVehicles[index].carModel = e.target.value;
-                          setFormData({ ...formData, vehicles: newVehicles });
-                        }}
-                        className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      >
-                        <option value="">Chọn model xe</option>
-                        {ALLOWED_CAR_MODELS.map((model) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={vehicle.licensePlate}
-                        onChange={(e) => {
-                          const newVehicles = [...formData.vehicles];
-                          newVehicles[index].licensePlate = e.target.value;
-                          setFormData({ ...formData, vehicles: newVehicles });
-                        }}
-                        className="flex-1 border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                        placeholder="Biển số"
-                      />
-                      {formData.vehicles.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newVehicles = formData.vehicles.filter((_, i) => i !== index);
+                {formData.vehicles.map((vehicle, index) => {
+                  // Lấy danh sách xe đã được chọn (có cả carModel và licensePlate, đã trim)
+                  const addedCarModels = formData.vehicles
+                    .filter((v, i) => i !== index && v.carModel?.trim() && v.licensePlate?.trim())
+                    .map((v) => v.carModel);
+                  
+                  // Kiểm tra xem xe này có trong danh sách xe ban đầu không (xe đã tồn tại trong DB)
+                  const isExistingVehicle = initialVehicles.some(
+                    (v) =>
+                      v.carModel?.trim() === vehicle.carModel?.trim() &&
+                      v.licensePlate?.trim() === vehicle.licensePlate?.trim() &&
+                      vehicle.carModel?.trim() &&
+                      vehicle.licensePlate?.trim()
+                  );
+                  
+                  // Chỉ khóa xe đã tồn tại trong database, không khóa xe mới đang nhập
+                  const isVehicleAdded = isExistingVehicle;
+                  
+                  // Lọc ra các xe chưa được thêm (loại trừ các xe đã được chọn ở các entry khác)
+                  const availableModels = ALLOWED_CAR_MODELS.filter(
+                    (model) => !addedCarModels.includes(model) || model === vehicle.carModel
+                  );
+
+                  return (
+                    <div key={index} className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <select
+                          value={vehicle.carModel}
+                          onChange={(e) => {
+                            // Ngăn chặn thay đổi nếu xe đã được thêm
+                            if (isVehicleAdded) return;
+                            const newVehicles = [...formData.vehicles];
+                            newVehicles[index].carModel = e.target.value;
                             setFormData({ ...formData, vehicles: newVehicles });
                           }}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-md"
+                          disabled={isVehicleAdded}
+                          className={`w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                            isVehicleAdded ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''
+                          }`}
                         >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                      )}
+                          <option value="">Chọn model xe</option>
+                          {availableModels.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={vehicle.licensePlate}
+                          onChange={(e) => {
+                            // Ngăn chặn thay đổi nếu xe đã được thêm
+                            if (isVehicleAdded) return;
+                            const newVehicles = [...formData.vehicles];
+                            newVehicles[index].licensePlate = e.target.value;
+                            setFormData({ ...formData, vehicles: newVehicles });
+                          }}
+                          disabled={isVehicleAdded}
+                          className={`flex-1 border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                            isVehicleAdded ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''
+                          }`}
+                          placeholder="Biển số"
+                        />
+                        {formData.vehicles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newVehicles = formData.vehicles.filter((_, i) => i !== index);
+                              setFormData({ ...formData, vehicles: newVehicles });
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-md"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <button
                   type="button"
                   onClick={() => {

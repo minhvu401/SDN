@@ -1,208 +1,251 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-
-const serviceDetails = {
-  'bao-duong-dinh-ky': {
-    title: 'Bảo dưỡng định kỳ',
-    icon: '🔧',
-    shortDesc:
-      'Bảo dưỡng toàn diện giúp xe điện của bạn hoạt động êm ái, tiết kiệm năng lượng và luôn trong trạng thái tốt nhất.',
-    duration: '60 – 90 phút',
-    price: 'Từ 400.000 – 800.000 VNĐ/lần',
-    steps: [
-      'Kiểm tra tổng thể xe: phanh, lốp, đèn, còi, hệ thống điện và cảm biến.',
-      'Thay dầu hộp số, vệ sinh lọc gió và làm sạch các chi tiết bị bám bụi.',
-      'Kiểm tra pin, dung lượng sạc/xả, cập nhật phần mềm điều khiển.',
-      'Cân chỉnh hệ thống treo, tay lái, khung xe để đảm bảo vận hành cân bằng.',
-    ],
-    benefits: [
-      'Tăng tuổi thọ pin và động cơ.',
-      'Giảm nguy cơ hỏng hóc đột ngột.',
-      'Tiết kiệm chi phí sửa chữa dài hạn.',
-      'Đảm bảo an toàn cho người và xe trong mọi điều kiện di chuyển.',
-    ],
-  },
-  'thay-the-pin': {
-    title: 'Thay thế pin xe điện',
-    icon: '🔋',
-    shortDesc:
-      'Dịch vụ thay pin chính hãng giúp tối ưu hiệu suất, tăng tuổi thọ pin và đảm bảo an toàn tuyệt đối.',
-    duration: '30 – 45 phút',
-    price: 'Từ 2.000.000 – 12.000.000 VNĐ tuỳ loại pin',
-    steps: [
-      'Đánh giá tình trạng pin hiện tại: chu kỳ sạc, dung lượng và nhiệt độ vận hành.',
-      'Tư vấn chọn loại pin tương thích với model xe.',
-      'Thay thế pin đúng quy chuẩn kỹ thuật, kiểm tra an toàn điện sau lắp đặt.',
-      'Cập nhật lại hệ thống quản lý năng lượng (BMS).',
-    ],
-    benefits: [
-      'Tăng thời gian sử dụng và quãng đường di chuyển.',
-      'Giảm nguy cơ cháy nổ, phồng pin do lỗi kỹ thuật.',
-      'Pin chính hãng có chứng nhận và bảo hành chính thức.',
-      'Cải thiện hiệu suất sạc và tốc độ tăng tốc.',
-    ],
-  },
-  'kiem-tra-phanh-lop': {
-    title: 'Kiểm tra phanh & lốp',
-    icon: '🛞',
-    shortDesc:
-      'Đảm bảo an toàn cho mỗi hành trình với quy trình kiểm tra phanh và lốp chuyên sâu, đúng chuẩn kỹ thuật.',
-    duration: '45 – 60 phút',
-    price: 'Từ 300.000 – 600.000 VNĐ/lần',
-    steps: [
-      'Kiểm tra độ mòn má phanh, đĩa phanh và dầu phanh.',
-      'Đo áp suất lốp, vá hoặc thay mới khi cần thiết.',
-      'Cân chỉnh góc đặt bánh xe, cân bằng động và hệ thống ABS.',
-      'Vệ sinh cụm phanh, tra dầu chống gỉ và kiểm tra độ nhạy.',
-    ],
-    benefits: [
-      'Phanh êm hơn, rút ngắn quãng đường phanh.',
-      'Tăng độ bám đường, tránh trượt bánh khi đi mưa.',
-      'Kéo dài tuổi thọ lốp và giảm hao điện.',
-      'Đảm bảo an toàn tuyệt đối khi di chuyển tốc độ cao.',
-    ],
-  },
-  've-sinh-rua-xe': {
-    title: 'Vệ sinh & rửa xe toàn diện',
-    icon: '🧼',
-    shortDesc:
-      'Giữ xe luôn sáng bóng, sạch đẹp và bảo vệ các chi tiết điện tử bằng quy trình rửa chuyên nghiệp.',
-    duration: '30 – 40 phút',
-    price: 'Từ 100.000 – 300.000 VNĐ/lần',
-    steps: [
-      'Rửa thân xe bằng dung dịch chuyên dụng, không ăn mòn lớp sơn.',
-      'Vệ sinh khoang máy, bánh xe, gầm và cụm phanh.',
-      'Làm sạch nội thất, sấy khô và khử mùi bằng công nghệ ion âm.',
-      'Phủ nano bảo vệ lớp sơn, chống tia UV và chống bám bụi.',
-    ],
-    benefits: [
-      'Xe sạch sẽ, sáng bóng như mới.',
-      'Bảo vệ bề mặt sơn và chi tiết nhựa khỏi oxy hoá.',
-      'Giảm bụi bẩn bám và hạn chế rỉ sét khung gầm.',
-      'Tăng tính thẩm mỹ và giữ giá trị xe lâu dài.',
-    ],
-  },
-  'kiem-tra-he-thong-dien': {
-    title: 'Kiểm tra hệ thống điện',
-    icon: '⚡',
-    shortDesc:
-      'Kiểm tra chuyên sâu hệ thống điện, dây dẫn, cảm biến và bộ điều khiển để phát hiện lỗi sớm và tối ưu hiệu suất.',
-    duration: '60 phút',
-    price: 'Từ 350.000 – 900.000 VNĐ/lần',
-    steps: [
-      'Đo điện áp, dòng điện và công suất tiêu thụ.',
-      'Kiểm tra dây dẫn, cảm biến, cầu chì và bộ điều khiển trung tâm.',
-      'Phát hiện và khắc phục lỗi chập, ngắn mạch hoặc tiếp xúc kém.',
-      'Tối ưu phần mềm điều khiển để xe vận hành ổn định hơn.',
-    ],
-    benefits: [
-      'Phát hiện sớm lỗi điện nguy hiểm.',
-      'Giảm hao điện và tăng hiệu suất động cơ.',
-      'Bảo vệ pin và các linh kiện điện tử quan trọng.',
-      'Đảm bảo an toàn tuyệt đối cho người sử dụng.',
-    ],
-  },
-  'cuu-ho-xe-dien': {
-    title: 'Cứu hộ xe điện 24/7',
-    icon: '🚨',
-    shortDesc:
-      'Hỗ trợ khẩn cấp 24/7: sạc pin di động, thay bánh, kéo xe về trạm dịch vụ nhanh chóng, an toàn.',
-    duration: 'Theo thực tế',
-    price: 'Phí hỗ trợ từ 200.000 VNĐ/lần',
-    steps: [
-      'Tiếp nhận yêu cầu cứu hộ qua hotline hoặc ứng dụng EV Care.',
-      'Đội cứu hộ di chuyển đến vị trí trong vòng 15–30 phút.',
-      'Hỗ trợ sạc pin khẩn cấp, thay bánh xe hoặc khắc phục lỗi tại chỗ.',
-      'Nếu cần, kéo xe về trạm bảo dưỡng gần nhất và lập báo cáo tình trạng.',
-    ],
-    benefits: [
-      'Hỗ trợ khẩn cấp 24/7, nhanh chóng và chuyên nghiệp.',
-      'Giảm thiểu rủi ro khi xe gặp sự cố giữa đường.',
-      'Đảm bảo an toàn tuyệt đối cho người và phương tiện.',
-      'Có mặt ở mọi khu vực trong nội thành và các tuyến quốc lộ chính.',
-    ],
-  },
-};
+import { fetchServiceById, type Service } from '@/lib/api/services';
 
 export default function ServiceDetailPage() {
   const { slug } = useParams();
   const router = useRouter();
+  const [service, setService] = useState<Service | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const service = serviceDetails[slug as keyof typeof serviceDetails];
+  useEffect(() => {
+    const loadService = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const serviceId = slug as string;
+        const data = await fetchServiceById(serviceId);
+        setService(data);
+      } catch (err: any) {
+        console.error('Error loading service:', err);
+        setError(err.message || 'Không thể tải thông tin dịch vụ');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!service) {
+    if (slug) {
+      loadService();
+    }
+  }, [slug]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center">
+      <div className="min-h-screen flex flex-col bg-gray-50">
         <Navbar />
-        <h1 className="text-3xl font-semibold text-gray-700 mb-4">Dịch vụ không tồn tại 😢</h1>
-        <button
-          onClick={() => router.push('/services')}
-          className="text-emerald-600 hover:underline"
-        >
-          Quay lại danh sách dịch vụ
-        </button>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải thông tin dịch vụ...</p>
+          </div>
+        </div>
         <Footer />
       </div>
     );
   }
 
+  if (error || !service) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <h1 className="text-3xl font-semibold text-gray-700 mb-4">
+            {error?.includes('not found') || error?.includes('404') ? 'Dịch vụ không tồn tại' : 'Có lỗi xảy ra'} 😢
+          </h1>
+          <p className="text-gray-600 mb-6">{error || 'Không tìm thấy dịch vụ'}</p>
+          <button
+            onClick={() => router.push('/services')}
+            className="bg-emerald-600 text-white px-6 py-2 rounded-md hover:bg-emerald-700 transition"
+          >
+            Quay lại danh sách dịch vụ
+          </button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Format thời gian
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} phút`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours} giờ ${mins} phút` : `${hours} giờ`;
+  };
+
+  // Format giá
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price);
+  };
+
+  // Icon theo loại dịch vụ
+  const getServiceIcon = (serviceType: string) => {
+    const icons: Record<string, string> = {
+      'Bảo dưỡng định kì': '🔧',
+      'Thay thế pin': '🔋',
+      'Kiểm tra phanh': '🛞',
+      'Vệ sinh': '🧼',
+      'Kiểm tra điện': '⚡',
+      'Cứu hộ': '🚨',
+    };
+    return icons[serviceType] || '🔧';
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50">
       <Navbar />
 
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 py-10 text-center">
-        <div className="text-5xl mb-3">{service.icon}</div>
-        <h1 className="text-3xl font-bold text-emerald-700 font-display">{service.title}</h1>
-        <p className="text-gray-600 mt-2 max-w-2xl mx-auto">{service.shortDesc}</p>
+      {/* Hero Header */}
+      <div className="relative bg-white border-b border-gray-200 overflow-hidden">
+        <div className="absolute top-10 right-10 w-32 h-32 rounded-full bg-emerald-100 opacity-30"></div>
+        <div className="absolute bottom-10 left-10 w-24 h-24 rounded-full bg-emerald-100 opacity-30"></div>
+        <div className="relative container mx-auto px-6 py-16 text-center">
+          <div className="inline-block mb-6 p-4 bg-emerald-600 rounded-2xl">
+            <div className="text-6xl mb-2">{getServiceIcon(service.serviceType)}</div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 font-display">
+            {service.name}
+          </h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6 leading-relaxed">
+            {service.description}
+          </p>
+          <div className="flex justify-center gap-3 flex-wrap">
+            <span className="inline-flex items-center px-5 py-2 bg-emerald-600 text-white rounded-full text-sm font-medium">
+              {service.serviceType}
+            </span>
+            {service.isActive === false ? (
+              <span className="inline-flex items-center px-5 py-2 bg-red-100 text-red-700 rounded-full text-sm border border-red-200">
+                Tạm ngưng
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-5 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm border border-emerald-200">
+                Đang hoạt động
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 container mx-auto px-6 py-12 max-w-4xl space-y-8">
-        <section className="bg-white shadow-lg rounded-xl p-8 border border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800 mb-3">Quy trình thực hiện</h2>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            {service.steps.map((step, i) => (
-              <li key={i}>{step}</li>
-            ))}
-          </ul>
-        </section>
+      <div className="flex-1 container mx-auto px-6 py-12 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description Card */}
+            <section className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Mô tả dịch vụ</h2>
+              </div>
+              <p className="text-gray-700 leading-relaxed text-lg">{service.description}</p>
+            </section>
 
-        <section className="bg-white shadow-lg rounded-xl p-8 border border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800 mb-3">Lợi ích dịch vụ</h2>
-          <ul className="list-disc list-inside text-gray-700 space-y-2">
-            {service.benefits.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="bg-white shadow-lg rounded-xl p-8 border border-gray-100 text-center">
-          <p className="text-gray-700 text-base mb-2">
-            <strong>Thời gian thực hiện:</strong> {service.duration}
-          </p>
-          <p className="text-gray-700 text-base mb-6">
-            <strong>Giá dịch vụ:</strong> {service.price}
-          </p>
-
-          <div className="flex justify-center gap-4">
-            <a
-              href="/booking"
-              className="bg-emerald-600 text-white px-6 py-2 rounded-md hover:bg-emerald-700 transition"
-            >
-              Đặt lịch ngay →
-            </a>
-            <button
-              onClick={() => router.push('/services')}
-              className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-md hover:bg-emerald-50 transition"
-            >
-              Quay lại danh sách
-            </button>
+            {/* Service Details Card */}
+            <section className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100 hover:shadow-2xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">Chi tiết dịch vụ</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="group flex items-start gap-4 p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl hover:from-emerald-100 hover:to-emerald-200 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Thời gian ước tính</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {formatDuration(service.estimatedDuration || service.duration || 60)}
+                    </p>
+                  </div>
+                </div>
+                <div className="group flex items-start gap-4 p-5 bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl hover:from-emerald-100 hover:to-emerald-200 transition-all duration-300">
+                  <div className="w-14 h-14 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Giá dịch vụ</p>
+                    <p className="text-2xl font-bold text-emerald-600">
+                      {formatPrice(service.basePrice)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
-        </section>
+
+          {/* Right Column - CTA Card */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6">
+              <section className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
+                <div className="text-center mb-6">
+                  <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-600 flex items-center justify-center border-4 border-emerald-100">
+                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Sẵn sàng đặt lịch?</h3>
+                  <p className="text-gray-600 text-sm">
+                    Chúng tôi sẽ liên hệ với bạn để xác nhận
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+                    <p className="text-sm text-emerald-700 mb-1">Giá chỉ từ</p>
+                    <p className="text-3xl font-bold text-emerald-600">{formatPrice(service.basePrice)}</p>
+                  </div>
+                  
+                  <a
+                    href="/booking"
+                    className="block w-full bg-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-center hover:bg-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      Đặt lịch ngay
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </a>
+                  
+                  <button
+                    onClick={() => router.push('/services')}
+                    className="block w-full bg-transparent border-2 border-emerald-600 text-emerald-600 px-6 py-4 rounded-xl font-semibold hover:bg-emerald-600 hover:text-white transition-all duration-300"
+                  >
+                    Quay lại danh sách
+                  </button>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Thời gian: {formatDuration(service.estimatedDuration || service.duration || 60)}</span>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Footer />

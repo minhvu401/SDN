@@ -14,7 +14,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
-        <div className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4 bg-emerald-600">
+        <div className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4 bg-emerald-600 animate-pulse">
           <svg
             className="w-8 h-8 text-white"
             fill="none"
@@ -29,8 +29,12 @@ export default function AdminPage() {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">EV Care Admin</h1>
-        <p className="text-gray-600">Đang chuyển hướng đến bảng điều khiển...</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">EV Care</h1>
+        <p className="text-sm text-gray-500 mb-4">Admin Panel</p>
+        <div className="flex justify-center">
+          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="text-gray-600 mt-4 text-sm">Đang chuyển hướng đến bảng điều khiển...</p>
       </div>
     </div>
   );
