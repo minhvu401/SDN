@@ -62,8 +62,34 @@ export default function StaffSchedulePage() {
 
   const loadSchedActiveTechnicians = async () => {
     try {
-      const res = await getActiveTechnicians();
-      if (res && res.success) setSchedActiveTechnicians(res.data || []);
+      // Fetch active technicians and all bookings to determine which
+      // technicians are already referenced in bookings (by fullName).
+      const [techRes, bookingsRes] = await Promise.all([getActiveTechnicians(), getStaffBookings()]);
+
+      const activeTechs = techRes && techRes.success ? (techRes.data || []) : [];
+
+      // Build a set of fullNames found in any booking. Use normalized lower-case trim for comparison.
+      const bookedNames = new Set<string>();
+      if (bookingsRes && bookingsRes.success) {
+        // Only treat a technician as "booked" if the booking is NOT completed.
+        // If a booking.status === 'completed' we should still allow that technician
+        // to appear in the "Chọn kỹ thuật viên" dropdown per your requirement.
+        (bookingsRes.data || []).forEach((b: any) => {
+          const fn = b?.technician?.fullName;
+          const status = (b?.status || '').toString().trim().toLowerCase();
+          if (fn && status !== 'completed') {
+            bookedNames.add(String(fn).trim().toLowerCase());
+          }
+        });
+      }
+
+      // Filter out technicians whose fullName appears in any booking's technician field
+      const filtered = activeTechs.filter((t: any) => {
+        const name = (t?.fullName || '').toString().trim().toLowerCase();
+        return name && !bookedNames.has(name);
+      });
+
+      setSchedActiveTechnicians(filtered);
     } catch (err) {
       console.error('loadSchedActiveTechnicians', err);
     }
@@ -82,7 +108,9 @@ export default function StaffSchedulePage() {
       await assignTechnicianToBooking(selectedBookingToAssign, selectedTechForBooking);
       alert('Gán kỹ thuật viên cho booking thành công');
       // refresh confirmed bookings
-      await loadConfirmedBookings();
+        await loadConfirmedBookings();
+        // refresh available technicians (so assigned techs are removed)
+        await loadSchedActiveTechnicians();
       setSelectedBookingToAssign('');
       setSelectedTechForBooking('');
     } catch (err) {
@@ -101,7 +129,9 @@ export default function StaffSchedulePage() {
       await completeStaffBooking(bookingId);
       alert('Đã đánh dấu hoàn thành booking');
       // refresh confirmed bookings list
-      await loadConfirmedBookings();
+        await loadConfirmedBookings();
+        // a completion may free up a technician; refresh active tech list
+        await loadSchedActiveTechnicians();
     } catch (err) {
       console.error('handleCompleteBooking', err);
       const message = err instanceof Error ? err.message : 'Hoàn thành thất bại';
