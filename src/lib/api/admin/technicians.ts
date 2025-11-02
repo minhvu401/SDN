@@ -1,7 +1,8 @@
 import { API_BASE_URL, authHeaders, handleResponse } from '../../api/client';
 
 export interface TechnicianItem {
-  _id: string;
+  _id?: string;
+  id?: string; // API có thể trả về id hoặc _id
   fullName?: string;
   name?: string; // Alias for fullName
   email?: string;
@@ -9,6 +10,7 @@ export interface TechnicianItem {
   password?: string; // Only for create
   role?: string;
   specializations?: string[];
+  specialization?: string[]; // API có thể trả về specialization (số ít)
   joinDate?: string;
   bio?: string;
   yearsOfExperience?: number;
