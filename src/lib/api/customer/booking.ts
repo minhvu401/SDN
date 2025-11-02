@@ -35,7 +35,6 @@ export interface Booking {
   updatedAt?: string;
 }
 
-
 // 🧩 1️⃣: Tạo mới đơn đặt lịch
 export async function createBooking(payload: Booking): Promise<Booking> {
   const response = await fetch(`${API_BASE_URL}/booking`, {
@@ -58,4 +57,24 @@ export async function getMyBookings(): Promise<Booking[]> {
   });
 
   return handleResponse<Booking[]>(response);
+}
+
+// 🧩 3️⃣: Cập nhật ngày bảo dưỡng (PATCH /customers/{id}/maintenance-date)
+export async function updateMaintenanceDate(
+  customerId: string,
+  maintenanceDate: string
+): Promise<{ message: string }> {
+  const response = await fetch(
+    `${API_BASE_URL}/customers/${customerId}/maintenance-date`,
+    {
+      method: 'PATCH',
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ maintenanceDate }),
+    }
+  );
+
+  return handleResponse<{ message: string }>(response);
 }
