@@ -335,7 +335,7 @@ export default function StaffRequestsPage() {
               <thead className="bg-gray-50 text-gray-700 border-b">
                 <tr>
                   <th className="text-left px-6 py-3 font-medium">
-                    Mã yêu cầu
+                    STT
                   </th>
                   <th className="text-left px-6 py-3 font-medium">
                     Khách hàng
@@ -379,7 +379,7 @@ export default function StaffRequestsPage() {
                     className="border-b border-gray-100 hover:bg-gray-50 transition"
                   >
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{r.id}</div>
+                      <div className="font-medium text-gray-900">{idx + 1}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div>
@@ -476,13 +476,7 @@ export default function StaffRequestsPage() {
                               onClick={() => openAssignModal(r)}
                               className="px-3 py-1 text-sm font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 transition"
                             >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => updateStatus(r.id, "reject")}
-                              className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
-                            >
-                              <XCircle className="w-4 h-4" />
+                              Duyệt
                             </button>
                           </>
                         )}
@@ -666,12 +660,12 @@ export default function StaffRequestsPage() {
                     </button>
                     <button
                       onClick={() => {
-                        updateStatus(selectedRequest.id, "reject");
+                        // chỉ đóng modal — không gọi API từ chối
                         setSelectedRequest(null);
                       }}
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition"
                     >
-                      <XCircle className="w-4 h-4" /> Từ chối
+                      <XCircle className="w-4 h-4" /> Thoát
                     </button>
                   </div>
                 )}
