@@ -39,7 +39,7 @@ export interface CreateCustomerDto {
 export interface UpdateCustomerDto {
   fullName?: string;
   phone?: string;
-  email?: string;
+  // email không được phép cập nhật qua API này
   address?: string;
   note?: string;
   vehicles?: Array<{ carModel: string; licensePlate: string }>;

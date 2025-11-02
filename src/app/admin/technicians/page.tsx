@@ -92,14 +92,33 @@ export default function AdminTechniciansPage() {
 
   const handleOpenForm = (tech?: TechnicianItem) => {
     if (tech) {
-      setEditingId(tech._id);
+      const techId = tech._id || tech.id || '';
+      setEditingId(techId);
+      
+      // Format joinDate để hiển thị trong input type="date" (YYYY-MM-DD)
+      let formattedJoinDate = '';
+      if (tech.joinDate) {
+        try {
+          const date = new Date(tech.joinDate);
+          if (!isNaN(date.getTime())) {
+            // Lấy year, month, day và format thành YYYY-MM-DD
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            formattedJoinDate = `${year}-${month}-${day}`;
+          }
+        } catch (e) {
+          console.error('Error parsing joinDate:', e);
+        }
+      }
+      
       setFormData({
         fullName: tech.fullName || tech.name || '',
         phone: tech.phone || '',
         password: '', // Don't show password when editing
         role: tech.role || 'TECHNICIAN',
-        specializations: tech.specializations || [],
-        joinDate: tech.joinDate || '',
+        specializations: tech.specializations || tech.specialization || [],
+        joinDate: formattedJoinDate,
         bio: tech.bio || '',
         yearsOfExperience: tech.yearsOfExperience?.toString() || '',
         isActive: tech.isActive ?? true,
@@ -153,14 +172,13 @@ export default function AdminTechniciansPage() {
     try {
       if (editingId) {
         // Update
+        // Backend không cho phép cập nhật role và joinDate
         const updatePayload: any = {
           fullName: formData.fullName.trim(),
           phone: formData.phone.trim(),
         };
 
-        if (formData.role) updatePayload.role = formData.role;
         if (formData.specializations.length > 0) updatePayload.specializations = formData.specializations;
-        if (formData.joinDate.trim()) updatePayload.joinDate = formData.joinDate.trim();
         if (formData.bio.trim()) updatePayload.bio = formData.bio.trim();
         if (formData.yearsOfExperience.trim() && !isNaN(parseInt(formData.yearsOfExperience, 10))) {
           updatePayload.yearsOfExperience = parseInt(formData.yearsOfExperience, 10);
@@ -227,10 +245,11 @@ export default function AdminTechniciansPage() {
     const name = (t.fullName || t.name || '').toLowerCase();
     const phone = (t.phone || '').toLowerCase();
     const searchLower = search.toLowerCase();
+    const specs = t.specializations || t.specialization || [];
     return (
       name.includes(searchLower) ||
       phone.includes(searchLower) ||
-      (t.specializations || []).some((spec) => spec.toLowerCase().includes(searchLower))
+      specs.some((spec) => spec.toLowerCase().includes(searchLower))
     );
   });
 
@@ -303,6 +322,8 @@ export default function AdminTechniciansPage() {
                   <th className="text-left py-2 px-3">Số điện thoại</th>
                   <th className="text-left py-2 px-3">Chuyên môn</th>
                   <th className="text-left py-2 px-3">Kinh nghiệm</th>
+                  <th className="text-left py-2 px-3">Ngày tham gia</th>
+                  <th className="text-left py-2 px-3">Giới thiệu</th>
                   <th className="text-left py-2 px-3">Trạng thái</th>
                   <th className="text-left py-2 px-3">Thao tác</th>
                 </tr>
@@ -310,51 +331,58 @@ export default function AdminTechniciansPage() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-600">
+                    <td colSpan={8} className="py-6 text-center text-gray-600">
                       Đang tải...
                     </td>
                   </tr>
                 )}
                 {error && !loading && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-red-600">
+                    <td colSpan={8} className="py-6 text-center text-red-600">
                       {error}
                     </td>
                   </tr>
                 )}
                 {!loading && !error && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-500">
+                    <td colSpan={8} className="py-6 text-center text-gray-500">
                       Chưa có kỹ thuật viên nào
                     </td>
                   </tr>
                 )}
                 {!loading && !error && filtered.map((tech) => {
                   const displayName = tech.fullName || tech.name || 'N/A';
+                  const techId = tech._id || tech.id || '';
                   return (
-                    <tr key={tech._id} className="border-b hover:bg-gray-50 transition-colors">
+                    <tr key={techId} className="border-b hover:bg-gray-50 transition-colors">
                       <td className="py-2 px-3 font-medium text-gray-800">{displayName}</td>
                       <td className="py-2 px-3">{tech.phone || '—'}</td>
                       <td className="py-2 px-3">
-                        {tech.specializations && tech.specializations.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {tech.specializations.slice(0, 2).map((spec, idx) => (
-                              <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-xs">
-                                {spec}
-                              </span>
-                            ))}
-                            {tech.specializations.length > 2 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-800 text-xs">
-                                +{tech.specializations.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          '—'
-                        )}
+                        {(() => {
+                          const specs = tech.specializations || tech.specialization || [];
+                          return specs.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {specs.map((spec, idx) => (
+                                <span key={idx} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-xs">
+                                  {spec}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            '—'
+                          );
+                        })()}
                       </td>
                       <td className="py-2 px-3">
                         {tech.yearsOfExperience ? `${tech.yearsOfExperience} năm` : '—'}
+                      </td>
+                      <td className="py-2 px-3">
+                        {tech.joinDate ? new Date(tech.joinDate).toLocaleDateString('vi-VN') : '—'}
+                      </td>
+                      <td className="py-2 px-3 max-w-xs">
+                        <div className="truncate" title={tech.bio || ''}>
+                          {tech.bio || '—'}
+                        </div>
                       </td>
                       <td className="py-2 px-3">
                         {tech.isActive ? (
@@ -379,7 +407,7 @@ export default function AdminTechniciansPage() {
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(tech._id, displayName)}
+                            onClick={() => handleDelete(techId, displayName)}
                             className="p-1.5 rounded-md hover:bg-gray-100 text-red-500"
                             title="Xóa"
                           >
@@ -484,6 +512,7 @@ export default function AdminTechniciansPage() {
                 <div>
                   <label htmlFor="tech-joinDate" className="block text-sm font-medium text-gray-700 mb-1">
                     Ngày tham gia
+                    {editingId && <span className="text-xs text-gray-500 ml-1">(không thể thay đổi)</span>}
                   </label>
                   <input
                     id="tech-joinDate"
@@ -491,7 +520,10 @@ export default function AdminTechniciansPage() {
                     type="date"
                     value={formData.joinDate}
                     onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                    disabled={!!editingId}
+                    className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition ${
+                      editingId ? 'bg-gray-100 cursor-not-allowed' : ''
+                    }`}
                   />
                 </div>
                 <div>

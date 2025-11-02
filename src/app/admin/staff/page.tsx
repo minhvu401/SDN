@@ -184,15 +184,14 @@ export default function AdminStaffPage() {
                   <th className="text-left py-2 px-3">Họ tên</th>
                   <th className="text-left py-2 px-3">Liên hệ</th>
                   <th className="text-left py-2 px-3">Vai trò</th>
-                  <th className="text-left py-2 px-3">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={5} className="py-6 text-center text-gray-600">Đang tải...</td></tr>
+                  <tr><td colSpan={4} className="py-6 text-center text-gray-600">Đang tải...</td></tr>
                 )}
                 {error && !loading && (
-                  <tr><td colSpan={5} className="py-6 text-center text-red-600">{error}</td></tr>
+                  <tr><td colSpan={4} className="py-6 text-center text-red-600">{error}</td></tr>
                 )}
                 {!loading && !error && staff.map((s) => {
                   const staffId = s._id || s.staffId || '';
@@ -212,24 +211,6 @@ export default function AdminStaffPage() {
                     </td>
                     <td className="py-2 px-3">
                       <RoleBadge role={s.role || 'staff'} />
-                    </td>
-                    <td className="py-2 px-3">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
-                          title="Sửa (chưa hỗ trợ)"
-                          disabled
-                        >
-                          <Pencil className="w-4 h-4 opacity-50" />
-                        </button>
-                        <button
-                          className="p-1.5 rounded-md hover:bg-gray-100 text-red-500"
-                          title="Xóa (chưa hỗ trợ)"
-                          disabled
-                        >
-                          <Trash2 className="w-4 h-4 opacity-50" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                   );

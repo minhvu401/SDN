@@ -21,27 +21,23 @@ export interface CenterItem {
   isActive?: boolean;
   openingHours?: string;
   description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export interface CreateCenterDto {
   name: string;
   address?: string;
   phone?: string;
-  email?: string;
-  manager?: string;
-  openingHours?: string;
-  description?: string;
+  isActive: boolean; // Required - backend yêu cầu
 }
 
 export interface UpdateCenterDto {
   name?: string;
   address?: string;
   phone?: string;
-  email?: string;
-  manager?: string;
   isActive?: boolean;
-  openingHours?: string;
-  description?: string;
 }
 
 export async function createCenter(payload: CreateCenterDto) {
@@ -91,10 +87,20 @@ export async function getCenterById(id: string) {
 }
 
 export async function updateCenter(id: string, payload: UpdateCenterDto) {
+  // Chỉ giữ lại các trường được backend hỗ trợ: name, address, phone, isActive
+  const allowedFields = ['name', 'address', 'phone', 'isActive'];
+  const filteredPayload: Record<string, any> = {};
+  
+  Object.keys(payload).forEach((key) => {
+    if (allowedFields.includes(key) && payload[key as keyof UpdateCenterDto] !== undefined) {
+      filteredPayload[key] = payload[key as keyof UpdateCenterDto];
+    }
+  });
+
   const res = await fetch(`${API_BASE_URL}/centers/${id}`, {
     method: 'PATCH',
     headers: authHeaders(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify(filteredPayload),
   });
   return handleResponse<CenterItem>(res);
 }

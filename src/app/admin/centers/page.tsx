@@ -23,11 +23,7 @@ export default function AdminCentersPage() {
     name: '',
     address: '',
     phone: '',
-    email: '',
-    manager: '',
-    openingHours: '',
-    description: '',
-    isActive: true,
+    isActive: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -72,10 +68,6 @@ export default function AdminCentersPage() {
         name: center.name || '',
         address: center.address || '',
         phone: center.phone || '',
-        email: center.email || '',
-        manager: center.manager || '',
-        openingHours: center.openingHours || '',
-        description: center.description || '',
         isActive: center.isActive ?? true,
       });
     } else {
@@ -84,11 +76,7 @@ export default function AdminCentersPage() {
         name: '',
         address: '',
         phone: '',
-        email: '',
-        manager: '',
-        openingHours: '',
-        description: '',
-        isActive: true,
+        isActive: false,
       });
     }
     setIsFormOpen(true);
@@ -101,11 +89,7 @@ export default function AdminCentersPage() {
       name: '',
       address: '',
       phone: '',
-      email: '',
-      manager: '',
-      openingHours: '',
-      description: '',
-      isActive: true,
+      isActive: false,
     });
   };
 
@@ -118,16 +102,19 @@ export default function AdminCentersPage() {
 
     setSubmitting(true);
     try {
-      const payload = {
+      // Chỉ gửi các trường được backend hỗ trợ: name, address, phone, isActive
+      // isActive luôn phải có và phải là boolean
+      const payload: any = {
         name: formData.name.trim(),
-        address: formData.address.trim() || undefined,
-        phone: formData.phone.trim() || undefined,
-        email: formData.email.trim() || undefined,
-        manager: formData.manager.trim() || undefined,
-        openingHours: formData.openingHours.trim() || undefined,
-        description: formData.description.trim() || undefined,
-        ...(editingId ? { isActive: formData.isActive } : {}),
+        isActive: Boolean(formData.isActive),
       };
+      
+      if (formData.address.trim()) {
+        payload.address = formData.address.trim();
+      }
+      if (formData.phone.trim()) {
+        payload.phone = formData.phone.trim();
+      }
 
       if (editingId) {
         await updateCenter(editingId, payload);
@@ -233,20 +220,22 @@ export default function AdminCentersPage() {
                   <th className="text-left py-2 px-3">Địa chỉ</th>
                   <th className="text-left py-2 px-3">Số điện thoại</th>
                   <th className="text-left py-2 px-3">Trạng thái</th>
+                  <th className="text-left py-2 px-3">Ngày tạo</th>
+                  <th className="text-left py-2 px-3">Ngày cập nhật</th>
                   <th className="text-left py-2 px-3">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-600">
+                    <td colSpan={8} className="py-6 text-center text-gray-600">
                       Đang tải...
                     </td>
                   </tr>
                 )}
                 {error && !loading && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-red-600">
+                    <td colSpan={8} className="py-6 text-center text-red-600">
                       {error}
                     </td>
                   </tr>
@@ -271,6 +260,28 @@ export default function AdminCentersPage() {
                         >
                           {c.isActive ? 'Hoạt động' : 'Tạm ngưng'}
                         </span>
+                      </td>
+                      <td className="py-2 px-3">
+                        {c.createdAt
+                          ? new Date(c.createdAt).toLocaleString('vi-VN', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : '—'}
+                      </td>
+                      <td className="py-2 px-3">
+                        {c.updatedAt
+                          ? new Date(c.updatedAt).toLocaleString('vi-VN', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : '—'}
                       </td>
                       <td className="py-2 px-3">
                         <div className="flex items-center gap-2">
@@ -361,116 +372,42 @@ export default function AdminCentersPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="center-phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Số điện thoại
-                  </label>
-                  <input
-                    id="center-phone"
-                    name="phone"
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Nhập số điện thoại"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="center-email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
-                  <input
-                    id="center-email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Nhập email"
-                  />
-                </div>
+              <div>
+                <label htmlFor="center-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Số điện thoại
+                </label>
+                <input
+                  id="center-phone"
+                  name="phone"
+                  type="text"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder="Nhập số điện thoại"
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="center-manager" className="block text-sm font-medium text-gray-700 mb-1">
-                    Quản lý
-                  </label>
-                  <input
-                    id="center-manager"
-                    name="manager"
-                    type="text"
-                    value={formData.manager}
-                    onChange={(e) =>
-                      setFormData({ ...formData, manager: e.target.value })
-                    }
-                    className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Tên quản lý"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="center-opening-hours" className="block text-sm font-medium text-gray-700 mb-1">
-                    Giờ mở cửa
-                  </label>
-                  <input
-                    id="center-opening-hours"
-                    name="openingHours"
-                    type="text"
-                    value={formData.openingHours}
-                    onChange={(e) =>
-                      setFormData({ ...formData, openingHours: e.target.value })
-                    }
-                    className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Ví dụ: 8:00 - 17:00"
-                  />
-                </div>
-              </div>
-
-              {editingId && (
-                <div>
-                  <label htmlFor="center-status" className="block text-sm font-medium text-gray-700 mb-1">
-                    Trạng thái
-                  </label>
-                  <select
-                    id="center-status"
-                    name="isActive"
-                    value={formData.isActive ? 'true' : 'false'}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        isActive: e.target.value === 'true',
-                      })
-                    }
-                    className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="true">Hoạt động</option>
-                    <option value="false">Tạm ngưng</option>
-                  </select>
-                </div>
-              )}
 
               <div>
-                <label htmlFor="center-description" className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả
+                <label htmlFor="center-status" className="block text-sm font-medium text-gray-700 mb-1">
+                  Trạng thái
                 </label>
-                <textarea
-                  id="center-description"
-                  name="description"
-                  value={formData.description}
+                <select
+                  id="center-status"
+                  name="isActive"
+                  value={formData.isActive ? 'true' : 'false'}
                   onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
+                    setFormData({
+                      ...formData,
+                      isActive: e.target.value === 'true',
+                    })
                   }
-                  rows={3}
                   className="w-full border rounded-md px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Nhập mô tả trung tâm"
-                />
+                >
+                  <option value="true">Hoạt động</option>
+                  <option value="false">Tạm ngưng</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">
