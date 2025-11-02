@@ -19,6 +19,7 @@ import {
   getActiveTechnicians,
   getStaffBookings,
   assignTechnicianToBooking,
+  completeStaffBooking,
 } from '../../../lib/api/staff/booking';
 
 export default function StaffSchedulePage() {
@@ -90,11 +91,16 @@ export default function StaffSchedulePage() {
   });
 
   // --- API-driven assignment state (confirmed bookings + active technicians)
-  const [confirmedBookings, setConfirmedBookings] = useState<any[]>([]);
+  // We keep two lists:
+  // - confirmedAssignedBookings: status === 'confirmed' && technician != null (shown in table)
+  // - confirmedUnassignedBookings: status === 'confirmed' && technician == null (shown in assign dropdown)
+  const [confirmedAssignedBookings, setConfirmedAssignedBookings] = useState<any[]>([]);
+  const [confirmedUnassignedBookings, setConfirmedUnassignedBookings] = useState<any[]>([]);
   const [schedActiveTechnicians, setSchedActiveTechnicians] = useState<any[]>([]);
   const [selectedBookingToAssign, setSelectedBookingToAssign] = useState('');
   const [selectedTechForBooking, setSelectedTechForBooking] = useState('');
   const [loadingAssign, setLoadingAssign] = useState(false);
+  const [completingBookingId, setCompletingBookingId] = useState<string | null>(null);
 
   const handleAssign = () => {
     if (!newTech || !selectedShift) {
@@ -139,8 +145,20 @@ export default function StaffSchedulePage() {
       const res = await getStaffBookings();
       if (res && res.success) {
         const confirmed = (res.data || []).filter((b: any) => b.status === 'confirmed');
-        setConfirmedBookings(
-          confirmed.map((b: any) => ({
+
+        const assigned = confirmed.filter((b: any) => !!b.technician);
+        const unassigned = confirmed.filter((b: any) => !b.technician);
+
+        setConfirmedAssignedBookings(
+          assigned.map((b: any) => ({
+            id: b.bookingId,
+            label: `${b.customer?.fullName ?? 'Khách hàng'} • ${b.licensePlates?.[0] ?? ''}`,
+            raw: b,
+          }))
+        );
+
+        setConfirmedUnassignedBookings(
+          unassigned.map((b: any) => ({
             id: b.bookingId,
             label: `${b.customer?.fullName ?? 'Khách hàng'} • ${b.licensePlates?.[0] ?? ''}`,
             raw: b,
@@ -183,6 +201,23 @@ export default function StaffSchedulePage() {
       alert(message);
     } finally {
       setLoadingAssign(false);
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId: string) => {
+    if (!bookingId) return;
+    try {
+      setCompletingBookingId(bookingId);
+      await completeStaffBooking(bookingId);
+      alert('Đã đánh dấu hoàn thành booking');
+      // refresh confirmed bookings list
+      await loadConfirmedBookings();
+    } catch (err) {
+      console.error('handleCompleteBooking', err);
+      const message = err instanceof Error ? err.message : 'Hoàn thành thất bại';
+      alert(message);
+    } finally {
+      setCompletingBookingId(null);
     }
   };
 
@@ -290,7 +325,7 @@ export default function StaffSchedulePage() {
                 className="border rounded-md px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="">-- Chọn booking đã duyệt --</option>
-                {confirmedBookings.map((b) => (
+                {confirmedUnassignedBookings.map((b: any) => (
                   <option key={b.id} value={b.id}>
                     {b.label}
                   </option>
@@ -326,6 +361,51 @@ export default function StaffSchedulePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Danh sách booking đã duyệt (Confirmed Bookings) */}
+        <div className="bg-white rounded-xl border shadow-sm p-5">
+          <h2 className="text-base font-semibold text-gray-800 mb-4">Danh sách booking đã duyệt</h2>
+          {confirmedAssignedBookings.length === 0 ? (
+            <div className="text-gray-500">Không có booking đã duyệt</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-gray-600 border-b">
+                  <tr>
+                    <th className="text-left py-2 px-3">STT</th>
+                    <th className="text-left py-2 px-3">Mã booking</th>
+                    <th className="text-left py-2 px-3">Khách hàng</th>
+                    <th className="text-left py-2 px-3">Biển số</th>
+                    <th className="text-left py-2 px-3">Kỹ thuật viên</th>
+                    <th className="text-left py-2 px-3">Thời gian</th>
+                    <th className="text-center py-2 px-3">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {confirmedAssignedBookings.map((b: any, i: number) => (
+                    <tr key={b.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 px-3">{i + 1}</td>
+                      <td className="py-2 px-3 font-medium">{b.id}</td>
+                      <td className="py-2 px-3">{b.raw?.customer?.fullName ?? '—'}</td>
+                      <td className="py-2 px-3">{b.raw?.licensePlates?.[0] ?? '—'}</td>
+                      <td className="py-2 px-3">{b.raw?.technician ? (b.raw.technician.fullName || b.raw.technician.name) : 'Chưa gán'}</td>
+                      <td className="py-2 px-3">{b.raw?.bookingDate ? new Date(b.raw.bookingDate).toLocaleString() : '—'}</td>
+                      <td className="py-2 px-3 text-center">
+                        <button
+                          onClick={() => handleCompleteBooking(b.id)}
+                          disabled={completingBookingId === b.id}
+                          className="inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition"
+                        >
+                          {completingBookingId === b.id ? 'Đang...' : 'Hoàn thành'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Danh sách ca làm */}
