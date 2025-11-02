@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, User as UserIcon, LogOut, LogIn, UserPlus, KeyRound, Calendar } from 'lucide-react';
+import { LayoutDashboard, User as UserIcon, LogOut, LogIn, UserPlus, KeyRound, Calendar, Settings } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
