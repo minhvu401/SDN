@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ArrowLeft,
   CreditCard,
@@ -16,19 +16,22 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { listTransactions, getTransactionStats, type Transaction, type TransactionStats } from '@/lib/api/admin/transactions';
+import { ToastContainer, type Toast } from '@/components/ui/Toast';
 
 export default function AdminFinancePage() {
   const router = useRouter();
 
-  // ===== DỮ LIỆU MẪU =====
-  const [transactions, setTransactions] = useState([
-    { id: 'INV001', type: 'Thu', description: 'Thanh toán dịch vụ bảo dưỡng', amount: 1200000, date: '2025-10-10', method: 'Chuyển khoản' },
-    { id: 'INV002', type: 'Chi', description: 'Nhập kho phụ tùng', amount: 800000, date: '2025-10-11', method: 'Tiền mặt' },
-    { id: 'INV003', type: 'Thu', description: 'Khách hàng thanh toán sửa chữa', amount: 950000, date: '2025-10-13', method: 'Ví điện tử' },
-  ]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<TransactionStats>({
+    totalIncome: 0,
+    totalExpense: 0,
+    profit: 0,
+  });
 
   const [newTxn, setNewTxn] = useState({
-    type: 'Thu',
+    type: 'Thu' as 'Thu' | 'Chi',
     description: '',
     amount: 0,
     date: new Date().toISOString().split('T')[0],
@@ -36,41 +39,59 @@ export default function AdminFinancePage() {
   });
 
   const [search, setSearch] = useState('');
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const showToast = (message: string, type: Toast['type'] = 'success') => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  };
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    try {
+      setLoading(true);
+      const [txns, transactionStats] = await Promise.all([
+        listTransactions(),
+        getTransactionStats(),
+      ]);
+      setTransactions(txns);
+      setStats(transactionStats);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      showToast('Không thể tải danh sách giao dịch', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ===== THÊM GIAO DỊCH =====
+  // Note: Hiện tại API chỉ lấy từ bookings, chưa có API để tạo transaction mới
+  // Nên hàm này sẽ chỉ hiển thị thông báo
   const addTxn = () => {
     if (!newTxn.description || newTxn.amount <= 0) {
-      alert('⚠️ Vui lòng nhập đầy đủ thông tin giao dịch!');
+      showToast('⚠️ Vui lòng nhập đầy đủ thông tin giao dịch!', 'error');
       return;
     }
-    const id = 'INV' + (transactions.length + 1).toString().padStart(3, '0');
-    setTransactions((prev) => [...prev, { id, ...newTxn }]);
-    setNewTxn({
-      type: 'Thu',
-      description: '',
-      amount: 0,
-      date: new Date().toISOString().split('T')[0],
-      method: 'Tiền mặt',
-    });
+    // TODO: Implement API call to create transaction
+    showToast('Tính năng thêm giao dịch thủ công đang được phát triển', 'info');
   };
 
   // ===== XÓA GIAO DỊCH =====
+  // Note: Transactions được lấy từ bookings, không thể xóa trực tiếp
   const deleteTxn = (id: string) => {
-    if (confirm('Xác nhận xóa giao dịch này?')) {
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
-    }
+    showToast('Giao dịch từ bookings không thể xóa', 'info');
   };
 
   // ===== TÍNH TOÁN TỔNG =====
-  const totalIncome = useMemo(
-    () => transactions.filter((t) => t.type === 'Thu').reduce((sum, t) => sum + t.amount, 0),
-    [transactions]
-  );
-  const totalExpense = useMemo(
-    () => transactions.filter((t) => t.type === 'Chi').reduce((sum, t) => sum + t.amount, 0),
-    [transactions]
-  );
-  const profit = totalIncome - totalExpense;
+  const totalIncome = stats.totalIncome;
+  const totalExpense = stats.totalExpense;
+  const profit = stats.profit;
 
   // ===== LỌC =====
   const filtered = transactions.filter(
@@ -83,17 +104,40 @@ export default function AdminFinancePage() {
     <div className="min-h-screen bg-gray-50">
 
       {/* HEADER */}
-      <div className="relative bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-6 max-w-6xl flex items-center gap-3">
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
-          >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            <span className="text-sm font-medium">Trang quản trị</span>
-          </button>
-
-          <div className="ml-auto flex items-center gap-2">
+      <div className="relative bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 max-w-6xl flex items-center justify-between p-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/admin/dashboard')}
+              className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              <span className="text-sm font-medium">Trang quản trị</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-emerald-600">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">EV Care</h1>
+                <p className="text-xs text-gray-500">Admin Panel</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <Wallet className="w-5 h-5 text-emerald-600" />
             <span className="text-sm text-gray-500">Quản lý tài chính & hóa đơn</span>
           </div>
@@ -212,7 +256,20 @@ export default function AdminFinancePage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-gray-600">
+                      Đang tải...
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-gray-500">
+                      Chưa có giao dịch nào
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((t) => (
                   <tr key={t.id} className="border-b hover:bg-gray-50 transition">
                     <td className="py-2 px-3 font-medium text-gray-800">{t.id}</td>
                     <td className="py-2 px-3">
@@ -239,13 +296,16 @@ export default function AdminFinancePage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onClose={(id) => setToasts((prev) => prev.filter((t) => t.id !== id))} />
     </div>
   );
 }

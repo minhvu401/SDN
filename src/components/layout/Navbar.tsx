@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, User as UserIcon, LogOut, LogIn, UserPlus, Settings, KeyRound, Bell, Shield, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, User as UserIcon, LogOut, LogIn, UserPlus, KeyRound, Calendar } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -110,7 +110,7 @@ export const Navbar: React.FC = () => {
                 </button>
 
                 {open && (
-                  <div className="absolute right-0 top-12 w-72 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                  <div className="absolute left-1/2 top-12 -translate-x-1/2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
                     {/* Header */}
                     <div className="p-4 border-b border-gray-100">
                       <div className="flex items-center gap-3">
@@ -126,6 +126,10 @@ export const Navbar: React.FC = () => {
 
                     {/* Menu */}
                     <div className="p-2">
+                      <Link href="/customer/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
+                        <LayoutDashboard className="w-4 h-4 text-emerald-600" />
+                        <span>Phương tiện của {user?.fullName || user?.username || 'bạn'}</span>
+                      </Link>
                       <Link href="/customer/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
                         <UserIcon className="w-4 h-4 text-emerald-600" />
                         <span>Thông tin cá nhân</span>
@@ -137,18 +141,6 @@ export const Navbar: React.FC = () => {
                       <Link href="/customer/change-password" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
                         <KeyRound className="w-4 h-4 text-emerald-600" />
                         <span>Đổi mật khẩu</span>
-                      </Link>
-                      <Link href="/customer/notifications" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
-                        <Bell className="w-4 h-4 text-emerald-600" />
-                        <span>Thông báo</span>
-                      </Link>
-                      <Link href="/customer/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
-                        <Shield className="w-4 h-4 text-emerald-600" />
-                        <span>Bảo mật</span>
-                      </Link>
-                      <Link href="/customer/support" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-sm text-gray-700">
-                        <HelpCircle className="w-4 h-4 text-emerald-600" />
-                        <span>Trợ giúp</span>
                       </Link>
                     </div>
 

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   BarChart3,
@@ -24,38 +24,79 @@ import {
   Cell,
   Legend,
 } from 'recharts';
+import { getMonthlyRevenue, getServiceStats, type RevenueDataPoint, type ServiceStats } from '@/lib/api/admin/statistics';
+import { listBookings, type BookingItem } from '@/lib/api/admin/booking';
 
 export default function AdminReportsPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [revenueData, setRevenueData] = useState<{ month: string; income: number }[]>([]);
+  const [errorData, setErrorData] = useState<{ name: string; value: number }[]>([]);
+  const [serviceData, setServiceData] = useState<{ name: string; count: number }[]>([]);
 
-  // ====== DATA MẪU ======
-  const revenueData = [
-    { month: 'Th1', income: 35 },
-    { month: 'Th2', income: 42 },
-    { month: 'Th3', income: 51 },
-    { month: 'Th4', income: 63 },
-    { month: 'Th5', income: 59 },
-    { month: 'Th6', income: 70 },
-    { month: 'Th7', income: 64 },
-    { month: 'Th8', income: 75 },
-    { month: 'Th9', income: 90 },
-    { month: 'Th10', income: 120 },
-  ];
+  useEffect(() => {
+    loadReportsData();
+  }, []);
 
-  const errorData = [
-    { name: 'Lỗi pin', value: 24 },
-    { name: 'Hệ thống điện', value: 18 },
-    { name: 'Phanh', value: 12 },
-    { name: 'Đèn & chiếu sáng', value: 8 },
-    { name: 'Khác', value: 5 },
-  ];
+  const loadReportsData = async () => {
+    try {
+      setLoading(true);
+      const [monthlyRevenue, serviceStats, allBookings] = await Promise.all([
+        getMonthlyRevenue(),
+        getServiceStats(),
+        listBookings({ limit: 1000 }),
+      ]);
 
-  const serviceData = [
-    { name: 'Bảo dưỡng định kỳ', count: 42 },
-    { name: 'Thay pin', count: 25 },
-    { name: 'Sửa điện', count: 20 },
-    { name: 'Rửa xe & vệ sinh', count: 14 },
-  ];
+      // Format revenue data
+      setRevenueData(
+        monthlyRevenue.map((r) => ({
+          month: r.label,
+          income: r.revenue,
+        }))
+      );
+
+      // Format service data
+      setServiceData(
+        serviceStats.slice(0, 10).map((s) => ({
+          name: s.name,
+          count: s.count,
+        }))
+      );
+
+      // Tính error data từ service types (giả sử lỗi liên quan đến service type)
+      const bookings = allBookings.data || [];
+      const errorCounts: Record<string, number> = {};
+      
+      bookings.forEach((booking) => {
+        booking.services?.forEach((service) => {
+          const serviceType = service.serviceType || service.name || 'Khác';
+          // Map service types to error categories
+          let errorCategory = 'Khác';
+          if (serviceType.toLowerCase().includes('pin') || serviceType.toLowerCase().includes('battery')) {
+            errorCategory = 'Lỗi pin';
+          } else if (serviceType.toLowerCase().includes('điện') || serviceType.toLowerCase().includes('electric')) {
+            errorCategory = 'Hệ thống điện';
+          } else if (serviceType.toLowerCase().includes('phanh') || serviceType.toLowerCase().includes('brake')) {
+            errorCategory = 'Phanh';
+          } else if (serviceType.toLowerCase().includes('đèn') || serviceType.toLowerCase().includes('light')) {
+            errorCategory = 'Đèn & chiếu sáng';
+          }
+          
+          errorCounts[errorCategory] = (errorCounts[errorCategory] || 0) + 1;
+        });
+      });
+
+      setErrorData(
+        Object.entries(errorCounts)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a, b) => b.value - a.value)
+      );
+    } catch (error) {
+      console.error('Error loading reports data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const COLORS = ['#10b981', '#3b82f6', '#facc15', '#f97316', '#ef4444'];
 
@@ -63,17 +104,40 @@ export default function AdminReportsPage() {
     <div className="min-h-screen bg-gray-50">
 
       {/* HEADER */}
-      <div className="relative bg-white border-b border-gray-200 py-4">
-        <div className="container mx-auto px-6 max-w-6xl flex items-center gap-3">
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
-          >
-            <ArrowLeft className="w-5 h-5 mr-1" />
-            <span className="text-sm font-medium">Trang quản trị</span>
-          </button>
-
-          <div className="ml-auto flex items-center gap-2">
+      <div className="relative bg-white border-b border-gray-200">
+        <div className="container mx-auto px-6 max-w-6xl flex items-center justify-between p-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push('/admin/dashboard')}
+              className="flex items-center text-emerald-700 hover:text-emerald-800 transition"
+            >
+              <ArrowLeft className="w-5 h-5 mr-1" />
+              <span className="text-sm font-medium">Trang quản trị</span>
+            </button>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-emerald-600">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">EV Care</h1>
+                <p className="text-xs text-gray-500">Admin Panel</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-emerald-600" />
             <span className="text-sm text-gray-500">Báo cáo & thống kê tổng hợp</span>
           </div>
@@ -89,15 +153,25 @@ export default function AdminReportsPage() {
             Biểu đồ doanh thu theo tháng (triệu VNĐ)
           </h2>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
+          {loading ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Đang tải dữ liệu...
+            </div>
+          ) : revenueData.length === 0 ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Chưa có dữ liệu
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* === 2. XU HƯỚNG LỖI KỸ THUẬT === */}
@@ -109,15 +183,25 @@ export default function AdminReportsPage() {
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex-1">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={errorData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="h-[280px] flex items-center justify-center text-gray-500">
+                  Đang tải dữ liệu...
+                </div>
+              ) : errorData.length === 0 ? (
+                <div className="h-[280px] flex items-center justify-center text-gray-500">
+                  Chưa có dữ liệu
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={errorData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
 
             <ul className="flex-1 space-y-2 text-sm text-gray-700">
@@ -140,24 +224,34 @@ export default function AdminReportsPage() {
 
           <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex-1">
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={serviceData}
-                    dataKey="count"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
-                  >
-                    {serviceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {loading ? (
+                <div className="h-[280px] flex items-center justify-center text-gray-500">
+                  Đang tải dữ liệu...
+                </div>
+              ) : serviceData.length === 0 ? (
+                <div className="h-[280px] flex items-center justify-center text-gray-500">
+                  Chưa có dữ liệu
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={serviceData}
+                      dataKey="count"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label
+                    >
+                      {serviceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
 
             <ul className="flex-1 space-y-2 text-sm text-gray-700">
