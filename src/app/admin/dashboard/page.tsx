@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
   DollarSign,
@@ -24,51 +24,80 @@ import {
   LineChart,
 } from 'recharts';
 import { useRouter } from 'next/navigation';
+import { getDashboardStats, getRevenueStats, getServiceStats, type RevenueDataPoint, type ServiceStats } from '@/lib/api/admin/statistics';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
 
   const [filter, setFilter] = useState<'day' | 'week' | 'month'>('week');
+  const [loading, setLoading] = useState(true);
+  const [revenueData, setRevenueData] = useState<{
+    day: RevenueDataPoint[];
+    week: RevenueDataPoint[];
+    month: RevenueDataPoint[];
+  }>({
+    day: [],
+    week: [],
+    month: [],
+  });
+  const [serviceStats, setServiceStats] = useState<ServiceStats[]>([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalRevenue: 0,
+    totalServices: 0,
+    totalBookings: 0,
+    completionRate: 0,
+    growth: 0,
+  });
 
-  // ===== DỮ LIỆU MÔ PHỎNG =====
-  const revenueData = {
-    day: [
-      { label: 'T2', revenue: 24 },
-      { label: 'T3', revenue: 30 },
-      { label: 'T4', revenue: 28 },
-      { label: 'T5', revenue: 35 },
-      { label: 'T6', revenue: 40 },
-      { label: 'T7', revenue: 22 },
-      { label: 'CN', revenue: 15 },
-    ],
-    week: [
-      { label: 'Tuần 1', revenue: 160 },
-      { label: 'Tuần 2', revenue: 180 },
-      { label: 'Tuần 3', revenue: 210 },
-      { label: 'Tuần 4', revenue: 230 },
-    ],
-    month: [
-      { label: 'T1', revenue: 720 },
-      { label: 'T2', revenue: 760 },
-      { label: 'T3', revenue: 810 },
-      { label: 'T4', revenue: 880 },
-      { label: 'T5', revenue: 930 },
-      { label: 'T6', revenue: 960 },
-    ],
+  useEffect(() => {
+    loadDashboardData();
+  }, [filter]);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [stats, revenue, services] = await Promise.all([
+        getDashboardStats(),
+        getRevenueStats(filter),
+        getServiceStats(),
+      ]);
+
+      setDashboardStats(stats);
+      setServiceStats(services.slice(0, 4)); // Top 4
+
+      // Load tất cả các period để có thể switch nhanh
+      if (filter === 'day') {
+        const [dayData, weekData, monthData] = await Promise.all([
+          getRevenueStats('day'),
+          getRevenueStats('week'),
+          getRevenueStats('month'),
+        ]);
+        setRevenueData({ day: dayData, week: weekData, month: monthData });
+      } else if (filter === 'week') {
+        const [dayData, weekData, monthData] = await Promise.all([
+          getRevenueStats('day'),
+          getRevenueStats('week'),
+          getRevenueStats('month'),
+        ]);
+        setRevenueData({ day: dayData, week: weekData, month: monthData });
+      } else {
+        const [dayData, weekData, monthData] = await Promise.all([
+          getRevenueStats('day'),
+          getRevenueStats('week'),
+          getRevenueStats('month'),
+        ]);
+        setRevenueData({ day: dayData, week: weekData, month: monthData });
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const serviceStats = [
-    { name: 'Bảo dưỡng định kỳ', count: 120 },
-    { name: 'Thay pin & kiểm tra sạc', count: 95 },
-    { name: 'Kiểm tra điện & đèn', count: 80 },
-    { name: 'Thay phanh / lốp', count: 75 },
-  ];
-
-  const totalRevenue =
-    revenueData[filter].reduce((sum, d) => sum + d.revenue, 0) * 1_000_000;
-
-  const completionRate = 92; // %
-  const growth = 8.5; // %
+  const totalRevenue = dashboardStats.totalRevenue;
+  const completionRate = dashboardStats.completionRate;
+  const growth = dashboardStats.growth;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -128,7 +157,7 @@ export default function AdminDashboardPage() {
           <DashboardCard
             icon={<Wrench className="w-6 h-6 text-blue-700" />}
             label="Dịch vụ thực hiện"
-            value={serviceStats.reduce((s, x) => s + x.count, 0) + ' lượt'}
+            value={dashboardStats.totalBookings + ' lượt'}
           />
           <DashboardCard
             icon={<CheckCircle2 className="w-6 h-6 text-yellow-600" />}
@@ -144,23 +173,33 @@ export default function AdminDashboardPage() {
             Biểu đồ doanh thu ({filter === 'day' ? 'ngày' : filter === 'week' ? 'tuần' : 'tháng'})
           </h2>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={revenueData[filter]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-                name="Doanh thu (triệu đồng)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {loading ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Đang tải dữ liệu...
+            </div>
+          ) : revenueData[filter].length === 0 ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Chưa có dữ liệu
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={revenueData[filter]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  name="Doanh thu (triệu đồng)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* BIỂU ĐỒ DỊCH VỤ PHỔ BIẾN */}
@@ -170,16 +209,26 @@ export default function AdminDashboardPage() {
             Dịch vụ phổ biến nhất
           </h2>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={serviceStats}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#3b82f6" name="Số lượt dịch vụ" />
-            </BarChart>
-          </ResponsiveContainer>
+          {loading ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Đang tải dữ liệu...
+            </div>
+          ) : serviceStats.length === 0 ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Chưa có dữ liệu
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={serviceStats}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#3b82f6" name="Số lượt dịch vụ" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>
