@@ -44,11 +44,14 @@ export async function getStaffBookings() {
 export async function setBookingStatus(bookingId: string, status: string) {
   // For staff operations the backend exposes a staff-scoped endpoint.
   // Use /staff/bookings/{id}/status so staff can change booking status.
-  const res = await fetch(`${API_BASE_URL}/staff/bookings/${bookingId}/status`, {
-    method: "PATCH",
-    headers: authHeaders(),
-    body: JSON.stringify({ status }),
-  });
+  const res = await fetch(
+    `${API_BASE_URL}/staff/bookings/${bookingId}/status`,
+    {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ status }),
+    }
+  );
   return handleResponse<any>(res);
 }
 
@@ -68,12 +71,44 @@ export async function assignTechnicianToBooking(
 }
 
 export async function completeStaffBooking(bookingId: string) {
-  const res = await fetch(
-    `${API_BASE_URL}/staff/bookings/${bookingId}/complete`,
-    {
-      method: "POST",
+  const urlComplete = `${API_BASE_URL}/staff/bookings/${bookingId}/complete`;
+  const urlStatus = `${API_BASE_URL}/staff/bookings/${bookingId}/status`;
+
+  // 1) Try PATCH /.../complete with an explicit empty JSON body (some servers
+  // may expect a JSON body even for state transitions).
+  try {
+    const resPatch = await fetch(urlComplete, {
+      method: "PATCH",
       headers: authHeaders(),
+      body: JSON.stringify({}),
+    });
+
+    if (resPatch.ok) return handleResponse<any>(resPatch);
+
+    // If server explicitly returns 404 (endpoint not found), try the status endpoint next.
+    if (resPatch.status === 404) {
+      // 2) Try PATCH /.../status { status: 'completed' }
+      const resStatus = await fetch(urlStatus, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify({ status: "completed" }),
+      });
+
+      if (resStatus.ok) return handleResponse<any>(resStatus);
+
+      // 3) As a last resort, try POST /.../complete (some deployments expect POST)
+      const resPost = await fetch(urlComplete, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({}),
+      });
+      return handleResponse<any>(resPost);
     }
-  );
-  return handleResponse<any>(res);
+
+    // For other non-ok statuses, let handleResponse throw a useful error.
+    return handleResponse<any>(resPatch);
+  } catch (err) {
+    // Network or other unexpected error — rethrow so callers can handle it.
+    throw err;
+  }
 }
