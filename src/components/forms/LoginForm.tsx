@@ -70,6 +70,7 @@ export const LoginForm: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
+          name="username"
           type="text"
           placeholder="Tên đăng nhập"
           value={username}
@@ -83,6 +84,7 @@ export const LoginForm: React.FC = () => {
 
         <div className="relative w-full">
           <Input
+            name="password"
             type={showPassword ? "text" : "password"}
             placeholder="Nhập mật khẩu"
             value={password}
@@ -175,12 +177,17 @@ export const LoginForm: React.FC = () => {
       </div>
 
       <div className="mt-6 text-center">
-        <p className="text-gray-600 text-base">
-          Chưa có tài khoản?{' '}
-          <a href="#" className="font-semibold hover:opacity-80" style={{ color: '#10B981' }}>
-            Đăng ký ngay
-          </a>
-        </p>
+          <p className="text-gray-600 text-base">
+            Chưa có tài khoản?{' '}
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); router.push('/register'); }}
+              className="font-semibold hover:opacity-80"
+              style={{ color: '#10B981' }}
+            >
+              Đăng ký ngay
+            </a>
+          </p>
       </div>
 
       <div className="mt-4 text-center">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
@@ -15,8 +15,10 @@ export const Input: React.FC<InputProps> = ({
   name,
   ...props
 }) => {
-  // Generate id from name if not provided
-  const inputId = id || (name ? `input-${name}` : `input-${Math.random().toString(36).substring(2, 9)}`);
+  // Generate stable id: prefer provided id, then a name-based id, then React's useId
+  const reactId = useId();
+  const normalizedReactId = reactId.replace(/[:]/g, '');
+  const inputId = id || (name ? `input-${name}` : `input-${normalizedReactId}`);
   
   return (
     <div className="w-full">
