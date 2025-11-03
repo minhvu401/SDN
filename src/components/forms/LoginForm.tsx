@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { login as loginApi } from '../../lib/api/auth';
-import { Wrench } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
   const router = useRouter();

@@ -7,44 +7,22 @@ import { RoleGuard } from '@/components/auth/RoleGuard';
 import { useAuth } from '@/hooks/useAuth';
 import {
   LayoutDashboard,
-  Users,
   ClipboardList,
   Calendar,
-  ClipboardCheck,
-  MessageSquare,
-  BarChart3,
   User,
   Menu,
   X,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Wrench,
-  Car,
   UserCheck,
-  DollarSign,
-  Package,
-  Activity,
-  AlertTriangle,
 } from "lucide-react";
 
 const staffNavigation = [
   { name: "Bảng điều khiển", href: "/staff/dashboard", icon: LayoutDashboard },
-  { name: "Khách hàng", href: "/staff/customers", icon: Users },
   { name: "Yêu cầu", href: "/staff/requests", icon: ClipboardList },
   { name: "Lịch làm việc", href: "/staff/schedule", icon: Calendar },
-  {
-    name: "Phiếu dịch vụ",
-    href: "/staff/service-orders",
-    icon: ClipboardCheck,
-  },
-  { name: "Theo dõi xe", href: "/staff/vehicle-tracking", icon: Car },
-  { name: "Phụ tùng", href: "/staff/parts", icon: Package },
   { name: "Kỹ thuật viên", href: "/staff/technicians", icon: UserCheck },
-  { name: "Tài chính", href: "/staff/finance", icon: DollarSign },
-  { name: "Hiệu suất", href: "/staff/performance", icon: Activity },
-  { name: "Chat hỗ trợ", href: "/staff/chat", icon: MessageSquare },
-  { name: "Báo cáo", href: "/staff/reports", icon: BarChart3 },
   { name: "Hồ sơ", href: "/staff/profile", icon: User },
 ];
 
