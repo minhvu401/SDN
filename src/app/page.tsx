@@ -30,7 +30,7 @@ export default function Home() {
                   Chúng tôi cung cấp dịch vụ bảo dưỡng, sửa chữa và chăm sóc xe điện tốt nhất với đội ngũ kỹ thuật viên giàu kinh nghiệm.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/booking" className="px-8 py-4 text-white font-semibold rounded-lg transition-all hover:scale-105 inline-block text-center" style={{ backgroundColor: '#10B981' }}>
+                  <Link href="/customer/booking" className="px-8 py-4 text-white font-semibold rounded-lg transition-all hover:scale-105 inline-block text-center" style={{ backgroundColor: '#10B981' }}>
                     Đặt lịch ngay
                   </Link>
                   <Link href="/services" className="px-8 py-4 text-white font-semibold rounded-lg border-2 border-white hover:bg-white hover:text-gray-900 transition-all inline-block text-center">
@@ -322,7 +322,7 @@ export default function Home() {
             <p className="text-lg text-gray-600">Truy cập nhanh các dịch vụ quan trọng nhất</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Link href="/booking" className="group bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-8 text-left hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100 block">
+            <Link href="/customer/booking" className="group bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-8 text-left hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100 block">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#10B981' }}>
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

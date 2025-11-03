@@ -215,11 +215,11 @@ export default function ServiceDetailPage() {
                   </div>
                   
                   <a
-                    href="/booking"
+                    href="/customer/booking"
                     className="block w-full bg-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-center hover:bg-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
                   >
                     <span className="flex items-center justify-center gap-2">
-                      Đặt lịch ngay
+                      Đi tới trang đặt lịch 
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>

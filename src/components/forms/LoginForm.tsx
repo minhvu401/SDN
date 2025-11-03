@@ -56,10 +56,10 @@ export const LoginForm: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Handle Google login logic here
-    console.log('Google login attempt');
-  };
+  // const handleGoogleLogin = () => {
+  //   // Handle Google login logic here
+  //   console.log('Google login attempt');
+  // };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -115,11 +115,11 @@ export const LoginForm: React.FC = () => {
           </button>
         </div>
 
-        <div className="text-right">
+        {/* <div className="text-right">
           <a href="#" className="text-sm hover:opacity-80" style={{ color: '#10B981' }}>
             Quên mật khẩu?
           </a>
-        </div>
+        </div> */}
 
         {error && (
           <p className="text-sm text-red-600">{error}</p>
@@ -151,7 +151,7 @@ export const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {/* 🔧 Đăng nhập kỹ thuật viên */}
+        {/* 🔧 Đăng nhập kỹ thuật viên
         <Button
           variant="outline"
           className="w-full text-base font-medium mb-3 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
@@ -159,9 +159,9 @@ export const LoginForm: React.FC = () => {
         >
           <Wrench className="w-4 h-4 mr-2" />
           Đăng nhập kỹ thuật viên
-        </Button>
+        </Button> */}
 
-        <Button
+        {/* <Button
           variant="outline"
           className="w-full mt-4 text-base font-medium"
           onClick={handleGoogleLogin}
@@ -173,7 +173,7 @@ export const LoginForm: React.FC = () => {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           Đăng nhập với Google
-        </Button>
+        </Button> */}
       </div>
 
       <div className="mt-6 text-center">
