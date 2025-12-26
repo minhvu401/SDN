@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
@@ -11,12 +11,22 @@ export const Input: React.FC<InputProps> = ({
   label,
   error,
   className = '',
+  id,
+  name,
   ...props
 }) => {
+  // Generate stable id: prefer provided id, then a name-based id, then React's useId
+  const reactId = useId();
+  const normalizedReactId = reactId.replace(/[:]/g, '');
+  const inputId = id || (name ? `input-${name}` : `input-${normalizedReactId}`);
+  
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label 
+          htmlFor={inputId}
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           {label}
         </label>
       )}
@@ -29,6 +39,8 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
         <input
+          id={inputId}
+          name={name || inputId}
           className={`
             w-full px-3 py-2 border border-gray-300 rounded-lg
             focus:outline-none focus:ring-2 focus:border-transparent
@@ -39,11 +51,15 @@ export const Input: React.FC<InputProps> = ({
           style={{
             '--tw-ring-color': '#10B981'
           } as React.CSSProperties}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           {...props}
         />
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p id={`${inputId}-error`} className="mt-1 text-sm text-red-600" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

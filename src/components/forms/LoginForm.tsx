@@ -1,17 +1,58 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { login as loginApi } from '../../lib/api/auth';
 
 export const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const router = useRouter();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempt:', { email, password });
+    setError('');
+    setLoading(true);
+    try {
+      const trimmedUsername = username.trim();
+      const trimmedPassword = password.trim();
+      if (!trimmedUsername || !trimmedPassword) {
+        throw new Error('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
+      }
+
+      const data = await loginApi({ username: trimmedUsername, password: trimmedPassword });
+      const token = data?.access_token || data?.accessToken;
+      const user = data?.user;
+      if (token) {
+        localStorage.setItem('accessToken', token);
+      }
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      // Điều hướng theo role
+      const role = (user?.role || '').toLowerCase();
+      let redirect = '/';
+      if (role === 'admin') redirect = '/admin/dashboard';
+      else if (role === 'staff') redirect = '/staff/dashboard';
+      else if (role === 'customer') redirect = '/customer/dashboard';
+      window.location.href = redirect;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Đăng nhập thất bại';
+      const lower = message.toLowerCase();
+      if (lower.includes('401') || lower.includes('invalid') || lower.includes('không chính xác')) {
+        setError('Username hoặc mật khẩu không chính xác');
+      } else {
+        setError(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -28,28 +69,50 @@ export const LoginForm: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          type="email"
-          placeholder="Nhập email của bạn"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          name="username"
+          type="text"
+          placeholder="Tên đăng nhập"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A4 4 0 017 17h10a4 4 0 011.879.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           }
         />
 
-        <Input
-          type="password"
-          placeholder="Nhập mật khẩu"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          }
-        />
+        <div className="relative w-full">
+          <Input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Nhập mật khẩu"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            }
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showPassword ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.29 3.29m13.42 13.42L21 21M12 12v.01" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            )}
+          </button>
+        </div>
 
         <div className="text-right">
           <a href="#" className="text-sm hover:opacity-80" style={{ color: '#10B981' }}>
@@ -57,12 +120,24 @@ export const LoginForm: React.FC = () => {
           </a>
         </div>
 
-        <Button type="submit" className="w-full text-lg font-medium" size="lg">
+        {error && (
+          <p className="text-sm text-red-600">{error}</p>
+        )}
+
+        <Button type="submit" className="w-full text-lg font-medium" size="lg" disabled={loading}>
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Đăng nhập
+          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
         </Button>
+
+        <button
+          type="button"
+          onClick={() => { window.location.href = '/'; }}
+          className="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition"
+        >
+         Back to Home
+        </button>
       </form>
 
       <div className="mt-6">
@@ -74,6 +149,8 @@ export const LoginForm: React.FC = () => {
             <span className="px-2 bg-white text-gray-500">hoặc</span>
           </div>
         </div>
+
+        {/* Removed technician login quick button per request */}
 
         <Button
           variant="outline"
@@ -91,12 +168,17 @@ export const LoginForm: React.FC = () => {
       </div>
 
       <div className="mt-6 text-center">
-        <p className="text-gray-600 text-base">
-          Chưa có tài khoản?{' '}
-          <a href="#" className="font-semibold hover:opacity-80" style={{ color: '#10B981' }}>
-            Đăng ký ngay
-          </a>
-        </p>
+          <p className="text-gray-600 text-base">
+            Chưa có tài khoản?{' '}
+            <a
+              href="#"
+              onClick={(e) => { e.preventDefault(); router.push('/register'); }}
+              className="font-semibold hover:opacity-80"
+              style={{ color: '#10B981' }}
+            >
+              Đăng ký ngay
+            </a>
+          </p>
       </div>
 
       <div className="mt-4 text-center">
